@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "eibd": "^0.5.1",
+    "node-schedule": "^2.1.1"
+  }
+}
