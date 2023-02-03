@@ -2,24 +2,25 @@
 // interpretation of your code. For more details take a look at
 // https://stackoverflow.com/questions/1335851/what-does-use-strict-do-in-javascript-and-what-is-the-reasoning-behind-it
 'use strict';
-
+//
 const PORT = 9240;
-
+//
 const { WebSocketServer } = require('ws');
-
 const wss = new WebSocketServer({ port: PORT });
-
+//
 var EventEmitter = require('events').EventEmitter;
 var ws_emitter = new EventEmitter();
-
-
+//
 console.log("WS: Service started as: ", PORT);
-
-
-function heartbeat() {
-    console.log("heartbeat for", this.ip);
-    this.isAlive = true;
-}
+//
+const interval = setInterval(function ping() {
+    wss.clients.forEach(function each(ws) {
+        if (ws.isAlive === false) return ws.terminate();
+        ws.isAlive = false;
+        ws.ping();
+        //console.log("Ping for", ws.ip);
+    });
+}, 15000);
 
 function toJson(str) {
     try {
@@ -36,31 +37,44 @@ function asString(json) {
     }
     return json;
 }
-
-
 // accepting KNX message like "0/0/2"
-wss.on('open', function message(data) {
-    console.log('WS: Received: %s', data);
-});
-
-wss.on('connection', function connection(ws, req) {
-    //
-    ws.isAlive = true;
-    ws.on('pong', heartbeat);
-    //
-    ws.ip = req.socket.remoteAddress;
-
-    ws.client_uuid = req.headers['sec-websocket-key'];
-
-    ws.on('message', function message(data) {
-
-        data = data.toString().trim();
-
-        return multicast(ws, data);
+function init() {
+    //console.log(wss);
+    console.log('WS: Prepare listener for OPEN events');
+    wss.on('open', function message(data) {
+        console.log('WS: Opened connection: %s', data);
     });
-});
+    //
+    console.log('WS: Prepare listener for CONNECTION events');
+    wss.on('connection', function connection(ws, req) {
+        //
+        ws.isAlive = true;
+        //
+        ws.ip = req.socket.remoteAddress;
+        //
+        ws.client_uuid = req.headers['sec-websocket-key'];
+        //
+        ws.on('pong', function() {
+            //console.log("Pong for", this.ip);
+            this.isAlive = true;
+        });
+        //
+        ws.on('message', function message(data) {
+            data = data.toString().trim();
+            multicast(ws, data);
+            ws_emitter.emit('message', data);
+        });
+        //
+        ws.on('error', console.error);
+    });
+    //
+    console.log('WS: Prepare listener for CLOSE events');
+    wss.on('close', function close() {
+        clearInterval(interval);
+    });
+}
 
-async function broadcast(data) {
+function broadcast(data) {
     console.log('WS: Broadcasting: ', data);
     wss.clients.forEach(function each(client) {
         if (client.readyState === 1) {
@@ -69,7 +83,7 @@ async function broadcast(data) {
     });
 }
 
-async function multicast(ws, data) {
+function multicast(ws, data) {
     console.log('WS: Multicasting: ', data);
     wss.clients.forEach(function each(client) {
         if (client !== ws && client.readyState === 1) {
@@ -77,19 +91,7 @@ async function multicast(ws, data) {
         }
     });
 }
-
-const interval = setInterval(function ping() {
-    wss.clients.forEach(function each(ws) {
-        if (ws.isAlive === false) return ws.terminate();
-        ws.isAlive = false;
-        ws.ping();
-    });
-}, 15000);
-
-wss.on('close', function close() {
-    clearInterval(interval);
-});
-
-
+//
+exports.WS_init = init;
 exports.WS_send = broadcast;
-exports.WS_event = ws_emitter
+exports.WS_event = ws_emitter;
