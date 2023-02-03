@@ -9,7 +9,7 @@ knx.KNX_init();
 var ws = require('./services/ws');
 ws.WS_init();
 //
-ws.WS_event.on("message", function() {
+ws.WS_event.on("message", function(data) {
     knx.KNX_send(data);
 });
 //
