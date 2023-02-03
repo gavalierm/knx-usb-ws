@@ -1,76 +1,100 @@
-//This module establishes a connection with the eibd/knx bus
-// In addition it creates a event emitter/listener object called knx_event
-// and provides a simple method for sending requests to the bus called WriteToBus
-var eibd = require("eibd")
+// https://www.promotic.eu/en/pmdoc/Subsystems/Comm/PmDrivers/KNXDTypes.htm
+var eibd = require("eibd");
 var opts = { host: "localhost", port: 6720 }
 var EventEmitter = require('events').EventEmitter;
 var knx_emitter = new EventEmitter();
 //This function initialises a connection to the eibd/knx bus
 var eibd_timeout = null;
+var data_to_resend = null;
+//
+var eibdconn = new eibd.Connection();
 
-function reInitEibdSocket() {
-  clearTimeout(eibd_timeout);
-  console.log('EIBD: Reconnecting ...');
-  eibd_timeout = setTimeout(function() {
-    initializeEibdSocket();
-  }, 10000);
+function isConnected() {
+  if (eibdconn) {
+    if (eibdconn.conn) {
+      return true;
+    }
+  }
   return false;
 }
 
-function initializeEibdSocket(handler) {
-  console.log('EIBD: Connecting to eibd server at %s:%d', opts.host, opts.port);
-  var eibdconn = new eibd.Connection();
+function checkStatus() {
+  clearTimeout(eibd_timeout);
+  eibd_timeout = null;
+  console.warn('EIBD: Reconnecting ...');
   eibdconn.socketRemote({ host: opts.host, port: opts.port }, function(err) {
     if (err) {
-      console.log('EIBD: eibd.socketRemote error: %s', err.code);
-      reInitEibdSocket();
-      return false;
+      console.error('EIBD: Socket error: %s', err.code);
+      eibd_timeout = setTimeout(function() {
+        checkStatus();
+      }, 10000);
     } else {
       console.log('EIBD: successfully connected to %s:%d', opts.host, opts.port);
-      if (handler && (typeof handler === 'function')) {
-        handler(eibdconn);
+      if (data_to_resend) {
+        sendToBus(data_to_resend);
+        data_to_resend = null;
       }
     }
   });
-  return (eibdconn);
-};
-// This function listens to the bus and packages every bus event as a node event with
-// the bus data packaged as a json object
-function groupsocketlisten(opts, callback) {
-  var conn = initializeEibdSocket();
-  //console.log(conn.socket.connecting);
-  if (!conn || !conn.conn || conn.socket.connecting == true) {
-    return;
-  }
-  console.log('KNX: Opening conn');
-  conn.openGroupSocket(0, function(parser) {
-    parser.on('write', function(src, dest, dpt, val) {
+}
+
+function openListener() {
+  eibdconn.openGroupSocket(0, function(parser) {
+    console.log('EIBD: Prepare listener for KNX events');
+    parser.on('write', function(src_addr, dst_addr, dpt_type, value) {
       // uncomment the line below to see bus events in the console
-      console.log('KNX: Write from ' + src + ' to ' + dest + ': ' + val);
+      console.log('KNX: Received from ' + src + ' to ' + dst + ': ' + value);
       var date = new Date().toJSON();
-      var knx_json_obj = { 'source': src, 'destination': dest, 'type': dpt, 'value': val, 'time': date };
+      var knx_json_obj = { 'src_addr': src_addr, 'dst_addr': dst_addr, 'dpt_type': dpt_type, 'value': value, 'time': date };
       knx_emitter.emit('bus_event', knx_json_obj)
     });
   });
 }
 // This function sends a message to the bus. An example use of WriteToBus...
 // WriteToBus("0/2/40", "DPT1", 0, callback);
-function sendToBus(dest, dpt, value, callback) {
-  var opts = { host: "localhost", port: 6720 };
-  var conn = new eibd.Connection();
-  console.log('KNX: Sending data .....' + dest, dpt, value);
-  conn.socketRemote(opts, function() {
-    var address = eibd.str2addr(dest);
-    conn.openTGroup(address, 0, function(err) {
+function sendToBus(data, callback) {
+  if (!isConnected()) {
+    //
+    data_to_resend = data;
+    //
+    console.error('KNX: Not connected');
+    checkStatus();
+    return;
+  }
+  //
+  if (!data) {
+    console.error('KNX: No valid data');
+    return;
+  }
+  var dst_addr = data[0];
+  var dpt_type = data[1];
+  var value = data[2];
+  //
+  console.log('KNX: Sending data ...', dst_addr, dpt_type, value);
+  eibdconn.socketRemote({ host: opts.host, port: opts.port }, function() {
+    eibdconn.openTGroup(eibd.str2addr(dst_addr), 0, function(err) {
       if (err) {
-        callback(err);
+        console.error("KNX: sendToBus failed", err);
       } else {
-        var msg = eibd.createMessage('write', dpt, parseFloat(value));
-        conn.sendAPDU(msg, callback);
+        eibdconn.sendAPDU(eibd.createMessage('write', dpt_type, parseFloat(value)), callback);
       }
     });
   });
 }
-groupsocketlisten();
-exports.KNX_send = sendToBus
-exports.KNX_event = knx_emitter
+//
+//groupsocketlisten(); init on load
+//
+function initializeEibdSocket() {
+  console.log('EIBD: Connecting to EIBD server at %s:%d', opts.host, opts.port);
+  //check connectin
+  checkStatus();
+  //attach listener
+  openListener();
+  //
+  //console.log(eibdconn);
+}
+//
+exports.KNX_init = initializeEibdSocket;
+//exports.KNX_status = eibd_status;
+exports.KNX_send = sendToBus;
+exports.KNX_event = knx_emitter;

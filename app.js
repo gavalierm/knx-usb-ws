@@ -4,9 +4,9 @@ console.log('    KNX USB WS     ');
 console.log('==================');
 
 //This init the knx_usb_bridge and run the emiter for it
-//var knx = require('./services/knx_eibd');
+var knx = require('./services/knx_eibd').KNX_init();
 
-var cron = require('./services/cron');
+//var cron = require('./services/cron');
 
 //var ws = require('./services/ws');
 

@@ -1,4 +1,8 @@
-//ws service
+// 'use strict' this is a header that forces the javascript engine to apply a stricter 
+// interpretation of your code. For more details take a look at
+// https://stackoverflow.com/questions/1335851/what-does-use-strict-do-in-javascript-and-what-is-the-reasoning-behind-it
+'use strict';
+
 const PORT = 9240;
 
 const { WebSocketServer } = require('ws');
