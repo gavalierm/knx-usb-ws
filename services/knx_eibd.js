@@ -95,6 +95,5 @@ function initializeEibdSocket() {
 }
 //
 exports.KNX_init = initializeEibdSocket;
-//exports.KNX_status = eibd_status;
 exports.KNX_send = sendToBus;
 exports.KNX_event = knx_emitter;

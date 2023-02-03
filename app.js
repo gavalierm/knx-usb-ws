@@ -1,14 +1,14 @@
 //KNX USB WS
 console.log('==================');
-console.log('    KNX USB WS     ');
+console.log('   KNX USB WS     ');
 console.log('==================');
 
 //This init the knx_usb_bridge and run the emiter for it
-var knx = require('./services/knx_eibd').KNX_init();
+//var knx = require('./services/knx_eibd').KNX_init(); //is not necceserzy becase first send will reconnect
 
 //var cron = require('./services/cron');
 
-//var ws = require('./services/ws');
+var ws = require('./services/ws');
 
 
 
