@@ -22,11 +22,12 @@ const interval = setInterval(function ping() {
     });
 }, 15000);
 
-function toJson(str) {
+function asJson(str) {
+    var json = false;
     try {
-        var json = JSON.parse(str.toString('utf8'));
+        json = JSON.parse(str.toString('utf8'));
     } catch (e) {
-        var json = str.toString('utf8');
+        console.log("WS: Parsing JSON failed");
     }
     return json;
 }
@@ -47,12 +48,17 @@ function init() {
     //
     console.log('WS: Prepare listener for CONNECTION events');
     wss.on('connection', function connection(ws, req) {
-        //
-        ws.isAlive = true;
+        //console.log("WS: Connection received", req.headers);
         //
         ws.ip = req.socket.remoteAddress;
         //
         ws.client_uuid = req.headers['sec-websocket-key'];
+        //
+        if (!ws.isAlive) {
+            //not marked by me
+            console.log("WS: Wellcome", ws.client_uuid, ws.ip);
+            ws.isAlive = true;
+        }
         //
         ws.on('pong', function() {
             //console.log("Pong for", this.ip);
@@ -62,7 +68,9 @@ function init() {
         ws.on('message', function message(data) {
             data = data.toString().trim();
             multicast(ws, data);
-            ws_emitter.emit('message', data);
+            if (asJson(data)) {
+                ws_emitter.emit('message', asJson(data));
+            }
         });
         //
         ws.on('error', console.error);
@@ -95,3 +103,4 @@ function multicast(ws, data) {
 exports.WS_init = init;
 exports.WS_send = broadcast;
 exports.WS_event = ws_emitter;
+exports.WS_asJson = asJson;

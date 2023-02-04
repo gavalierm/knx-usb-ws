@@ -25,14 +25,19 @@ function action_central_off(callback) {
     };
     knx.KNX_send(data, callback);
 }
-//
-cron.CRON_schedule('* * * * *', "Central OFF", action_central_off);
+// Central off every day at 00:00
+cron.CRON_schedule('0 0 * * *', "Central OFF", action_central_off);
 //
 //
 // BRIDGE WORKER
 //
 //
 ws.WS_event.on("message", function(data) {
+    data = ws.WS_asJson(data);
+    if(data){
+        console.log("APP: No valid JSON data from WS event");
+        return;
+    }
     knx.KNX_send(data);
 });
 //
