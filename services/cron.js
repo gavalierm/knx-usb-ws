@@ -15,8 +15,18 @@ function sheduleCron(cron_time, message, callback) {
     callback(message);
   });
 }
-sheduleCron('* * * * *', "Turning off the light!", function(msg) {
-  KNX_send(['0/1/5', 'DPT1', 0], function() {
-    console.log("CRON:", msg);
-  }); //['0/2/29','DPT1',0] //0/2/3 group central, 17 scenes, 0 off
-});
+//
+function action_central_off(message) {
+  //KNX data is like ['0/1/5', 'DPT1', 0] so i need some translations
+  var data = {
+    'dst_addr': '0/1/5',
+    'dpt_type': 'DPT1',
+    'value': 0
+  };
+  KNX_send(data, function() {
+    console.log("CRON:", message);
+  });
+}
+//
+sheduleCron('* * * * *', "Central OFF", action_central_off);
+//

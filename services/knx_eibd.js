@@ -72,17 +72,14 @@ function sendToBus(data, callback) {
     console.error('KNX: No valid data');
     return;
   }
-  var dst_addr = data[0];
-  var dpt_type = data[1];
-  var value = data[2];
   //
-  console.log('KNX: Sending data ...', dst_addr, dpt_type, value);
+  console.log('KNX: Sending data ...', data);
   eibdconn.socketRemote({ host: opts.host, port: opts.port }, function() {
-    eibdconn.openTGroup(eibd.str2addr(dst_addr), 0, function(err) {
+    eibdconn.openTGroup(eibd.str2addr(data.dst_addr), 0, function(err) {
       if (err) {
         console.error("KNX: sendToBus failed", err);
       } else {
-        eibdconn.sendAPDU(eibd.createMessage('write', dpt_type, parseFloat(value)), callback);
+        eibdconn.sendAPDU(eibd.createMessage('write', data.dpt_type, parseFloat(data.value)), callback);
       }
     });
   });
