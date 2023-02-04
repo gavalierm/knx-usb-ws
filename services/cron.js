@@ -4,29 +4,27 @@
 'use strict';
 //
 const schedule = require('node-schedule');
-var KNX_send = require('./knx_eibd').KNX_send;
 //
 console.log('CRON: Service started');
 //
-function sheduleCron(cron_time, message, callback) {
+function scheduleCron(cron_time, message, callback) {
   //'42 * * * *'
   console.log("CRON: Schedule action [ " + message + " ] at " + cron_time);
   const job = schedule.scheduleJob(cron_time, function() {
-    callback(message);
+    function message_callback() {
+      console.log("CRON: Job done [ " + message + " ]");
+    };
+    if (callback) {
+      callback(message_callback);
+    } else {
+      message_callback();
+    }
   });
 }
 //
-function action_central_off(message) {
-  //KNX data is like ['0/1/5', 'DPT1', 0] so i need some translations
-  var data = {
-    'dst_addr': '0/1/5',
-    'dpt_type': 'DPT1',
-    'value': 0
-  };
-  KNX_send(data, function() {
-    console.log("CRON:", message);
-  });
+function init() {
+  scheduleCron('* * * * *', "I m working");
 }
-//
-sheduleCron('* * * * *', "Central OFF", action_central_off);
+exports.CRON_init = init;
+exports.CRON_schedule = scheduleCron;
 //
