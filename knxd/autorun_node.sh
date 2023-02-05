@@ -2,17 +2,34 @@
 
 cd /home/pi/Projects/knx-usb-ws/
 
-tmux new-session -d -s atem;
-tmux send -t atem 'node home/pi/Projects/knx-usb-ws/app.js' ENTER;
+function sleeper {
+    for (( sxslp = 0; sxslp < 1; sxslp++ )); do
+        echo "."
+        sleep 1
+    done
+}
 
-#wait for tmux
-sleep 2;
+RUN_USER="pi"
+SESSION_ID="KNX_sess"
 
-#open window on desktop
-#lxterminal --command="tmux ls" > dev/null
-#export DISPLAY=:0; nohup "lxterminal -e tmux a -t atem">/dev/null &>/dev/null &
-#export DISPLAY=:0; nohup lxterminal -e "tmux a -t atem" > /dev/null 2>&1 </dev/null &
+#zabijem processy
+printf "\nPKILL: Clearing all KNX for '$RUN_USER'\n"
+pkill -u $RUN_USER -9 nodejs
 
-sleep 2;
+tmux list-sessions
+printf "\nTMUX: Clearing session '$SESSION_ID'\n"
+tmux kill-session -t "$SESSION_ID"
+sleeper
+tmux list-sessions
+#
+tmux new-session -s "$SESSION_ID" -n "knx-usb-ws" -d
+printf "\nTMUX: Created new session '$SESSION_ID'\n"
+tmux list-sessions
+sleeper
+
+tmux send-keys -t "$SESSION_ID:0" 'node home/pi/Projects/knx-usb-ws/app.js' ENTER
+echo "TMUX: Created new window 'knx-usb-ws'"
+sleeper
+
 echo "Autostart done";
 echo -ne '\n\n' > /dev/null 2>&1 </dev/null

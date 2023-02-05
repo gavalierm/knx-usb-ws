@@ -22,6 +22,8 @@ apt install tmux
 
 apt install nodejs
 
+apt install vim
+
 cd /home/pi/Projects/knx-usb-ws/kxnd/
 
 echo "Install daemon of kxd";
@@ -55,7 +57,7 @@ systemctl disable knxd.service
 # Systemd knxd unit
 cat >  /etc/systemd/system/knxd.service <<EOF
 [Unit]
-Description=KNX Daemon (edit gavo)
+Description=KNX Daemon (G A V O)
 After=network.target
 
 [Service]
