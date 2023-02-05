@@ -89,3 +89,9 @@ ldconfig
 
 systemctl enable knxd.service
 sync
+
+line="@reboot /home/pi/Projects/knx-usb-ws/kxnd/autorun_node.sh >/dev/null 2>&1"
+(crontab -u $(whoami) -l; echo "$line" ) | crontab -u $(whoami) -
+
+
+echo "Please reboot"
