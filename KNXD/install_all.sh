@@ -17,6 +17,18 @@ if [ "$(id -u)" != "0" ]; then
    exit 1
 fi
 
+apt install libgles-dev libegl-dev
+
+ls /usr/lib/arm-linux-gnueabihf/libGLE*
+
+sudo ln -s /usr/lib/arm-linux-gnueabihf/libGLESv2.so /usr/lib/libbrcmGLESv2.so
+
+ls /usr/lib/arm-linux-gnueabihf/libEGL*
+
+sudo ln -s /usr/lib/arm-linux-gnueabihf/libEGL.so /usr/lib/libbrcmEGL.so
+
+apt install tmux
+
 cd /home/pi/Projects/knx-usb-ws/kxnd/
 
 echo "Install daemon of kxd";
