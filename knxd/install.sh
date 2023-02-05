@@ -8,6 +8,10 @@ if [ "$(id -u)" != "0" ]; then
    exit 1
 fi
 
+sudo service cron status
+sudo systemctl enable cron
+sudo systemctl start cron
+
 apt install libgles-dev libegl-dev
 
 ls /usr/lib/arm-linux-gnueabihf/libGLE*
