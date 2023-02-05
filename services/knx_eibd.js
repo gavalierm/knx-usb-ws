@@ -16,9 +16,9 @@ var eibdconn = new eibd.Connection();
 
 function humanType(dpt_type) {
   switch (dpt_type) {
-    case "DTP1":
+    case "DPT1":
       return "switch";
-    case "DTP5":
+    case "DPT5":
       return "scene";
   }
   console.error("KNX: No valid KNX type");
