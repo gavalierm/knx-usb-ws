@@ -118,6 +118,7 @@ knx.KNX_event.on("message", function(data) {
         }
         data_ = knx.KNX_humanType(data_.dpt_type) + " " + trs.name + " " + data_.value; //scene name on
         data_ = data_.toUpperCase();
+        break;
     }
     ws.WS_send(data_);
 });
