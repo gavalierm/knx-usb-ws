@@ -47,10 +47,11 @@ function openListener() {
   eibdconn.openGroupSocket(0, function(parser) {
     console.log('EIBD: Prepare listener for KNX events');
     parser.on('write', function(src_addr, dst_addr, dpt_type, value) {
-      // uncomment the line below to see bus events in the console
-      console.log('KNX: Received from ' + src + ' to ' + dst + ': ' + value);
       var date = new Date().toJSON();
       var knx_json_obj = { 'src_addr': src_addr, 'dst_addr': dst_addr, 'dpt_type': dpt_type, 'value': value, 'time': date };
+      //
+      console.log('KNX: Received', knx_json_obj);
+      //
       knx_emitter.emit('message', knx_json_obj);
     });
   });
