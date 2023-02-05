@@ -99,9 +99,9 @@ ws.WS_event.on("message", function(data) {
 });
 //
 knx.KNX_event.on("message", function(data) {
-    var data_ = ws.WS_asJson(data);
+    var data_ = data;
     if (!data_) {
-        console.log("APP: No valid JSON data from KNX event");
+        console.log("APP: No valid JSON data from KNX event", data_);
         return;
     }
     //translator
