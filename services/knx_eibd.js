@@ -37,7 +37,7 @@ function isConnected() {
 function checkStatus() {
   clearTimeout(eibd_timeout);
   eibd_timeout = null;
-  console.warn('EIBD: Reconnecting ...');
+  console.warn('EIBD: Reconnecting to KNXD daemon ...');
   eibdconn.socketRemote({ host: opts.host, port: opts.port }, function(err) {
     if (err) {
       console.error('EIBD: Socket error: %s', err.code);
@@ -45,7 +45,7 @@ function checkStatus() {
         checkStatus();
       }, 10000);
     } else {
-      console.log('EIBD: successfully connected to %s:%d', opts.host, opts.port);
+      console.log('EIBD: Successfully connected to KNXD daemon %s:%d', opts.host, opts.port);
       if (data_to_resend) {
         sendToBus(data_to_resend);
         data_to_resend = null;
@@ -100,7 +100,7 @@ function sendToBus(data, callback) {
 //groupsocketlisten(); init on load
 //
 function init() {
-  console.log('EIBD: Connecting to EIBD server at %s:%d', opts.host, opts.port);
+  console.log('EIBD: Connecting to KNXD daemon at %s:%d', opts.host, opts.port);
   //check connectin
   checkStatus();
   //attach listener

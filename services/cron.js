@@ -12,7 +12,8 @@ function scheduleCron(cron_time, message, callback) {
   console.log("CRON: Schedule action [ " + message + " ] at " + cron_time);
   const job = schedule.scheduleJob(cron_time, function() {
     function message_callback() {
-      console.log("CRON: Job done [ " + message + " ]");
+      var date = new Date();
+      console.log("CRON: Job done [ " + message + " ]", date.toString());
     };
     if (callback) {
       callback(message_callback);
