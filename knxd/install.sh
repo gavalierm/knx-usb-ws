@@ -5,15 +5,6 @@ if [ "$(id -u)" != "0" ]; then
    echo "     Start script must run as root" 1>&2
    echo "     Start a root shell with"
    echo "     sudo su"
-   
-   echo "Auto sudo-ing in 5s"
-   i=0
-   while [ $i -lt 5 ]; do
-       sleep 1
-       echo "."
-       i=$((i+1))
-   done
-   sudo su
    exit 1
 fi
 

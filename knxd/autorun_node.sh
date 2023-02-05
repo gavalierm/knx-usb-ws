@@ -1,9 +1,9 @@
 #!/bin/bash
 
-cd /home/pi/knx-usb-ws/
+cd /home/pi/Projects/knx-usb-ws/
 
 tmux new-session -d -s atem;
-tmux send -t atem 'node /home/pi/knx-usb-ws/app.js' ENTER;
+tmux send -t atem 'node home/pi/Projects/knx-usb-ws/app.js' ENTER;
 
 #wait for tmux
 sleep 2;
