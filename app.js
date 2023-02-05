@@ -1,4 +1,5 @@
 //KNX USB WS
+//https://github.com/MarkPinches/knx
 console.log('==================');
 console.log('   KNX USB WS     ');
 console.log('==================');
@@ -11,6 +12,25 @@ knx.KNX_init();
 //
 var ws = require('./services/ws');
 ws.WS_init();
+//
+//
+var translator = {};
+//
+translator['uvod'] = {
+    dst_addr: '0/1/1',
+    dpt_type: 'DPT5',
+    value: 2
+};
+translator['chvaly'] = {
+    dst_addr: '0/1/2',
+    dpt_type: 'DPT5',
+    value: 2
+};
+translator['kazen'] = {
+    dst_addr: '0/1/3',
+    dpt_type: 'DPT5',
+    value: 2
+};
 //
 //
 // CRON WORKER
@@ -33,12 +53,19 @@ cron.CRON_schedule('0 0 * * *', "Central OFF", action_central_off);
 //
 //
 ws.WS_event.on("message", function(data) {
-    data = ws.WS_asJson(data);
-    if(data){
+    var data_ = ws.WS_asJson(data);
+    if (data_) {
         console.log("APP: No valid JSON data from WS event");
-        return;
+        console.log("APP: Trying translator");
+        data_ = ws.WS_asString(data);
+        data_ = data_.split(" ");
+        if(!data[2] || !translator[data[2]]){
+            console.log("APP: No translator");
+            return;
+        }
+        data_ = translator[data[2]];
     }
-    knx.KNX_send(data);
+    knx.KNX_send(data_);
 });
 //
 knx.KNX_event.on("message", function(data) {
