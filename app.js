@@ -113,9 +113,6 @@ knx.KNX_event.on("message", function(data) {
         if (!knx.KNX_humanType(data_.dpt_type)) {
             return;
         }
-        if (!data_.value) {
-            return;
-        }
         data_ = knx.KNX_humanType(data_.dpt_type) + " " + trs.name + " " + data_.value; //scene name on
         data_ = data_.toUpperCase();
         break;
