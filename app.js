@@ -36,6 +36,11 @@ var translator = [
         dst_addr: '0/0/2',
         dpt_type: 'DPT1'
     },
+    {
+        name: "central",
+        dst_addr: '0/0/5',
+        dpt_type: 'DPT1'
+    },
     //scene
     {
         name: "uvod",
@@ -64,7 +69,7 @@ var translator = [
 function action_central_off(callback) {
     //KNX data is like ['0/1/5', 'DPT1', 0] so i need some translations
     var data = {
-        'dst_addr': '0/1/5',
+        'dst_addr': '0/0/5',
         'dpt_type': 'DPT1',
         'value': 0
     };
