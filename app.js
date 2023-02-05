@@ -110,13 +110,13 @@ knx.KNX_event.on("message", function(data) {
         if (trs.dst_addr != data_.dst_addr) {
             continue;
         }
-        if (!knx.humanType(data_.dpt_type)) {
+        if (!knx.KNX_humanType(data_.dpt_type)) {
             return;
         }
         if (!data_.value) {
             return;
         }
-        data_ = knx.humanType(data_.dpt_type) + " " + data_.name + " " + data_.value; //scene name on
+        data_ = knx.KNX_humanType(data_.dpt_type) + " " + data_.name + " " + data_.value; //scene name on
         data_ = data_.toUpperCase();
     }
     ws.WS_send(data_);
