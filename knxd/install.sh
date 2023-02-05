@@ -89,7 +89,7 @@ ldconfig
 systemctl enable knxd.service
 sync
 
-cmd="@reboot /home/pi/Projects/knx-usb-ws/knxd/autorun_node.sh >>/tmp/knx_cron.log 2>&1"
+cmd="@reboot /home/pi/Projects/knx-usb-ws/auto_tmuxer.sh >>/tmp/knx_cron.log 2>&1"
 (crontab -u pi -l; echo "$cmd" ) | crontab -u pi -
 
 
