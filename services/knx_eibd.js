@@ -14,6 +14,17 @@ var data_to_resend = null;
 //
 var eibdconn = new eibd.Connection();
 
+function humanType(dpt_type) {
+  switch (dpt_type) {
+    case "DTP1":
+      return "switch";
+    case "DTP5":
+      return "scene";
+  }
+  console.error("KNX: No valid KNX type");
+  return null;
+}
+
 function isConnected() {
   if (eibdconn) {
     if (eibdconn.conn) {
@@ -101,3 +112,4 @@ function init() {
 exports.KNX_init = init;
 exports.KNX_send = sendToBus;
 exports.KNX_event = knx_emitter;
+exports.KNX_humanType = humanType;

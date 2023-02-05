@@ -14,22 +14,25 @@ var ws = require('./services/ws');
 ws.WS_init();
 //
 //
-var translator = {};
-//
-translator['uvod'] = {
-    dst_addr: '0/1/1',
-    dpt_type: 'DPT5',
-    value: 2
-};
-translator['chvaly'] = {
-    dst_addr: '0/1/2',
-    dpt_type: 'DPT5',
-    value: 2
-};
-translator['kazen'] = {
-    dst_addr: '0/1/3',
-    dpt_type: 'DPT5',
-    value: 2
+var translator = {
+    {
+        name: "uvod",
+        dst_addr: '0/1/1',
+        dpt_type: 'DPT5',
+        value: 2
+    },
+    {
+        name: "chvaly",
+        dst_addr: '0/1/2',
+        dpt_type: 'DPT5',
+        value: 2
+    },
+    {
+        name: "kazen",
+        dst_addr: '0/1/3',
+        dpt_type: 'DPT5',
+        value: 2
+    },
 };
 //
 //
@@ -54,12 +57,12 @@ cron.CRON_schedule('0 0 * * *', "Central OFF", action_central_off);
 //
 ws.WS_event.on("message", function(data) {
     var data_ = ws.WS_asJson(data);
-    if (data_) {
+    if (!data_) {
         console.log("APP: No valid JSON data from WS event");
         console.log("APP: Trying translator");
         data_ = ws.WS_asString(data);
         data_ = data_.split(" ");
-        if(!data[2] || !translator[data[2]]){
+        if (!data[2] || !translator[data[2]]) {
             console.log("APP: No translator");
             return;
         }
@@ -69,7 +72,27 @@ ws.WS_event.on("message", function(data) {
 });
 //
 knx.KNX_event.on("message", function(data) {
-    ws.WS_send(data);
+    var data_ = ws.WS_asJson(data);
+    if (!data_) {
+        console.log("APP: No valid JSON data from KNX event");
+        return;
+    }
+    //translator
+    for (var i = 0; i < translator.length; i++) {
+        var trs = translator[i];
+        if (trs.dst_addr != data_.dst_addr) {
+            continue;
+        }
+        if (!knx.humanType(data_.dpt_type)) {
+            return;
+        }
+        if (!data_.value) {
+            return;
+        }
+        data_ = knx.humanType(data_.dpt_type) + " " + data_.name + " " + data_.value; //scene name on
+        data_ = data_.toUpperCase();
+    }
+    ws.WS_send(data_);
 });
 //
 //
