@@ -30,7 +30,7 @@ printf "\nTMUX: Created new session '$SESSION_ID'\n"
 tmux list-sessions
 sleeper
 
-tmux send-keys -t "$SESSION_ID:0" 'node home/pi/Projects/knx-usb-ws/app.js' ENTER
+tmux send-keys -t "$SESSION_ID:0" 'node /home/pi/Projects/knx-usb-ws/app.js' ENTER
 echo "TMUX: Created new window 'knx-usb-ws'"
 sleeper
 
