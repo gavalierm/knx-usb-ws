@@ -20,6 +20,8 @@ sudo ln -s /usr/lib/arm-linux-gnueabihf/libEGL.so /usr/lib/libbrcmEGL.so
 
 apt install tmux
 
+apt install nodejs
+
 cd /home/pi/Projects/knx-usb-ws/kxnd/
 
 echo "Install daemon of kxd";
@@ -81,8 +83,8 @@ ldconfig
 systemctl enable knxd.service
 sync
 
-line="@reboot /home/pi/Projects/knx-usb-ws/kxnd/autorun_node.sh >/dev/null 2>&1"
-(crontab -u $(whoami) -l; echo "$line" ) | crontab -u $(whoami) -
+cmd="@reboot /home/pi/Projects/knx-usb-ws/kxnd/autorun_node.sh >/dev/null 2>&1"
+(crontab -u pi -l; echo "$cmd" ) | crontab -u pi -
 
 
 echo "Please reboot"

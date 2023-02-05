@@ -1,0 +1,2 @@
+# MEAN WELL KNX-USB Interface 28c2:0013
+SUBSYSTEM=="usb", ATTR{idVendor}=="28c2", ATTR{idProduct}=="0013", ACTION=="add", GROUP="knxd", MODE="0664"
