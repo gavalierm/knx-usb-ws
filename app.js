@@ -83,8 +83,8 @@ cron.CRON_schedule('0 0 * * *', "Central OFF", action_central_off);
 //
 //
 ws.WS_event.on("message", function(data) {
-    var data_ = ws.WS_asJson(data);
     console.log("test",data_);
+    var data_ = ws.WS_asJson(data);
     if (!data_) {
         console.log("APP: No valid JSON data from WS event");
         console.log("APP: Trying translator");
