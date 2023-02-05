@@ -15,21 +15,41 @@ ws.WS_init();
 //
 //
 var translator = {
+    //switch
     {
-        name: "uvod",
-        dst_addr: '0/1/1',
-        dpt_type: 'DPT5',
-        value: 2
+        name: "schody",
+        dst_addr: '0/0/0',
+        dpt_type: 'DPT1',
+        value: 0
     },
     {
         name: "chvaly",
-        dst_addr: '0/1/2',
-        dpt_type: 'DPT5',
-        value: 2
+        dst_addr: '0/0/1',
+        dpt_type: 'DPT1',
+        value: 1
     },
     {
         name: "kazen",
-        dst_addr: '0/1/3',
+        dst_addr: '0/0/2',
+        dpt_type: 'DPT1',
+        value: 2
+    },
+    //scene
+    {
+        name: "uvod",
+        dst_addr: '0/1/0',
+        dpt_type: 'DPT5',
+        value: 0
+    },
+    {
+        name: "chvaly",
+        dst_addr: '0/1/1',
+        dpt_type: 'DPT5',
+        value: 1
+    },
+    {
+        name: "kazen",
+        dst_addr: '0/1/2',
         dpt_type: 'DPT5',
         value: 2
     },

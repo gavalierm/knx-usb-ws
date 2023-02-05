@@ -211,7 +211,7 @@ EOF
 cat > /etc/default/knxd <<EOF
 # Command line parameters for knxd. TPUART Backend
 # Serial device Raspberry
-KNXD_OPTIONS="--eibaddr=$EIB_ADDRESS_KNXD --client-addrs=$EIB_START_ADDRESS_CLIENTS_KNXD:$EIB_NUMBER_OF_CLIENT_KNX_CLIENT_ADDRESSES -d -D -T -R -S -i --listen-local=/tmp/knx -b tpuarts:/dev/ttyAMA0"
+# KNXD_OPTIONS="--eibaddr=$EIB_ADDRESS_KNXD --client-addrs=$EIB_START_ADDRESS_CLIENTS_KNXD:$EIB_NUMBER_OF_CLIENT_KNX_CLIENT_ADDRESSES -d -D -T -R -S -i --listen-local=/tmp/knx -b tpuarts:/dev/ttyAMA0"
 # Serial device PC
 # KNXD_OPTIONS="--eibaddr=$EIB_ADDRESS_KNXD --client-addrs=$EIB_START_ADDRESS_CLIENTS_KNXD:$EIB_NUMBER_OF_CLIENT_KNX_CLIENT_ADDRESSES -d -D -T -R -S -i --listen-local=/tmp/knx -b tpuarts:/dev/ttyS0"
 # Tunnel Backend
