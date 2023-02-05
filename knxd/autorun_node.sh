@@ -2,6 +2,9 @@
 
 cd /home/pi/Projects/knx-usb-ws/
 
+git stash
+git pull
+
 function sleeper {
     for (( sxslp = 0; sxslp < 1; sxslp++ )); do
         echo "."
