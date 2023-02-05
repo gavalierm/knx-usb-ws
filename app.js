@@ -18,12 +18,12 @@ var translator = [
     //switch
     {
         name: "schody",
-        dst_addr: '0/0/0',
+        dst_addr: '0/0/4',
         dpt_type: 'DPT1'
     },
     {
         name: "zvukari",
-        dst_addr: '0/0/1',
+        dst_addr: '0/0/3',
         dpt_type: 'DPT1'
     },
     {
@@ -33,7 +33,7 @@ var translator = [
     },
     {
         name: "podium",
-        dst_addr: '0/0/2',
+        dst_addr: '0/0/1',
         dpt_type: 'DPT1'
     },
     {
