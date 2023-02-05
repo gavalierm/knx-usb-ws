@@ -14,25 +14,27 @@ var ws = require('./services/ws');
 ws.WS_init();
 //
 //
-var translator = {
+var translator = [
     //switch
     {
         name: "schody",
         dst_addr: '0/0/0',
-        dpt_type: 'DPT1',
-        value: 0
+        dpt_type: 'DPT1'
     },
     {
-        name: "chvaly",
+        name: "zvukari",
         dst_addr: '0/0/1',
-        dpt_type: 'DPT1',
-        value: 1
+        dpt_type: 'DPT1'
     },
     {
-        name: "kazen",
+        name: "sala",
         dst_addr: '0/0/2',
-        dpt_type: 'DPT1',
-        value: 2
+        dpt_type: 'DPT1'
+    },
+    {
+        name: "podium",
+        dst_addr: '0/0/2',
+        dpt_type: 'DPT1'
     },
     //scene
     {
@@ -53,7 +55,7 @@ var translator = {
         dpt_type: 'DPT5',
         value: 2
     },
-};
+];
 //
 //
 // CRON WORKER
