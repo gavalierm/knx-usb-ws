@@ -37,9 +37,12 @@ function asJson(str) {
     return json;
 }
 
-function asString(json) {
-    if (!json) {
-        return 'BAD MESSAGE';
+function asString(str) {
+    var json = false;
+    try {
+        json = str.toString('utf8');
+    } catch (e) {
+        console.log("WS: Parsing STRING failed");
     }
     return json;
 }
@@ -69,9 +72,7 @@ function init() {
         ws.on('message', function message(data) {
             data = data.toString().trim();
             multicast(ws, data);
-            if (asJson(data)) {
-                ws_emitter.emit('message', asJson(data));
-            }
+            ws_emitter.emit('message', data);
         });
         //
         ws.on('error', console.error);
@@ -105,3 +106,4 @@ exports.WS_init = init;
 exports.WS_send = broadcast;
 exports.WS_event = ws_emitter;
 exports.WS_asJson = asJson;
+exports.WS_asString = asString;

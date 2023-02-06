@@ -8,7 +8,7 @@ var cron = require('./services/cron'); //run sheduled crons
 cron.CRON_init();
 //
 var knx = require('./services/knx_eibd');
-knx.KNX_init();
+//knx.KNX_init();
 //
 var ws = require('./services/ws');
 ws.WS_init();
@@ -83,12 +83,17 @@ cron.CRON_schedule('0 0 * * *', "Central OFF", action_central_off);
 //
 //
 ws.WS_event.on("message", function(data) {
+    console.log("DATA MESS", data);
     var data_ = ws.WS_asJson(data);
-    //console.log("test", data_);
     if (!data_) {
-        console.warn("APP: No valid JSON data from WS event");
-        console.log("APP: Trying translator");
         data_ = ws.WS_asString(data);
+        if (!data_) {
+            console.warn("APP: No valid JSON data from WS event. Trying translator ...", data);
+            return;
+        }
+        //
+        console.warn("DATA", data_);
+        //
         data_ = data_.split(" ");
         if (!data_[0] && !data_[1]) {
             console.log("APP: No correct message from WS");
@@ -97,13 +102,16 @@ ws.WS_event.on("message", function(data) {
         //
         for (var i = 0; i < translator.length; i++) {
             var trs = translator[i];
+            console.log(trs);
             if (trs.name.toUpperCase() != data_[1]) {
+                console.log("skip", trs);
                 continue;
             }
             data_ = trs;
             break;
         }
     }
+    console.log("APP: Brdiging to KNX", data_);
     knx.KNX_send(data_);
 });
 //
@@ -126,6 +134,7 @@ knx.KNX_event.on("message", function(data) {
         data_ = data_.toUpperCase();
         break;
     }
+    console.log("APP: Brdiging to WS", data_);
     ws.WS_send(data_);
 });
 //
