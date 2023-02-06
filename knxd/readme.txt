@@ -47,3 +47,10 @@ sudo udevadm control --reload-rules
 REBOOT
 root@raspberry:~# reboot
 
+
+TEST
+
+/usr/local/bin/knxd -p /run/knxd/knxd.pid --eibaddr=1.1.128 --client-addrs=1.1.129:8 -d -D -T -R -S -i --listen-local=/tmp/knx -b usb:
+
+
+

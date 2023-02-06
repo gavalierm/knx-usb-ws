@@ -69,7 +69,7 @@ var translator = [
 function action_central_off(callback) {
     //KNX data is like ['0/1/5', 'DPT1', 0] so i need some translations
     var data = {
-        'dst_addr': '0/0/5',
+        'dst_addr': '0/0/1',
         'dpt_type': 'DPT1',
         'value': 0
     };
@@ -83,10 +83,10 @@ cron.CRON_schedule('0 0 * * *', "Central OFF", action_central_off);
 //
 //
 ws.WS_event.on("message", function(data) {
-    console.log("test",data_);
     var data_ = ws.WS_asJson(data);
+    console.log("test",data_);
     if (!data_) {
-        console.log("APP: No valid JSON data from WS event");
+        console.warn("APP: No valid JSON data from WS event");
         console.log("APP: Trying translator");
         data_ = ws.WS_asString(data);
         data_ = data_.split(" ");
