@@ -107,6 +107,9 @@ ws.WS_event.on("message", function(data) {
                 console.log("skip", trs);
                 continue;
             }
+            if (data_[2] && !trs.value) {
+                trs.value = data_[2];
+            }
             data_ = trs;
             break;
         }
