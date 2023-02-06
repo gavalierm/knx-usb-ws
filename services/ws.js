@@ -23,7 +23,7 @@ const interval = setInterval(function ping() {
 }, 15000);
 
 function heartbeat() {
-    console.log("heartbeat for", this.ip);
+    //console.log("heartbeat for", this.ip);
     this.isAlive = true;
 }
 
