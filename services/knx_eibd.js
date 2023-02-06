@@ -77,7 +77,7 @@ function sendToBus(data, callback) {
     data_to_resend = data;
     //
     console.error('KNX: Not connected');
-    checkStatus();
+    //checkStatus();
     //return;
   }
   //
