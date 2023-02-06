@@ -71,14 +71,14 @@ function openListener() {
 // WriteToBus("0/2/40", "DPT1", 0, callback);
 function sendToBus(data, callback) {
   console.log("KNX: Send", eibdconn, data);
-  return;
+  //return;
   if (!isConnected()) {
     //
     data_to_resend = data;
     //
     console.error('KNX: Not connected');
     checkStatus();
-    return;
+    //return;
   }
   //
   if (!data) {
