@@ -84,17 +84,25 @@ cron.CRON_schedule('0 0 * * *', "Central OFF", action_central_off);
 //
 ws.WS_event.on("message", function(data) {
     var data_ = ws.WS_asJson(data);
-    console.log("test",data_);
+    //console.log("test", data_);
     if (!data_) {
         console.warn("APP: No valid JSON data from WS event");
         console.log("APP: Trying translator");
         data_ = ws.WS_asString(data);
         data_ = data_.split(" ");
-        if (!data[2] || !translator[data[2]]) {
-            console.log("APP: No translator");
+        if (!data_[0] && !data_[1]) {
+            console.log("APP: No correct message from WS");
             return;
         }
-        data_ = translator[data[2]];
+        //
+        for (var i = 0; i < translator.length; i++) {
+            var trs = translator[i];
+            if (trs.name.toUpperCase() != data_[1]) {
+                continue;
+            }
+            data_ = trs;
+            break;
+        }
     }
     knx.KNX_send(data_);
 });
