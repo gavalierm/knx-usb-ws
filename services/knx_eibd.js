@@ -82,9 +82,9 @@ function sendToBus(data, callback) {
       //
       data_to_resend = data;
       //
-      console.error('KNX: Not connected', eibdconn);
-      //checkStatus();
-      //return;
+      console.error('KNX: Not connected');
+      checkStatus();
+      return;
     }
     eibdconn.openTGroup(eibd.str2addr(data.dst_addr), 0, function(err) {
       if (err) {
