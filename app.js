@@ -103,7 +103,7 @@ ws.WS_event.on("message", function(data) {
         for (var i = 0; i < translator.length; i++) {
             var trs = translator[i];
             //console.log(trs);
-            if (trs.name.toUpperCase() != data_[1]) {
+            if (trs.name.toUpperCase() != data_[1].toUpperCase()) {
                 //console.log("skip", trs);
                 continue;
             }
