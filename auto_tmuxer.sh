@@ -35,4 +35,6 @@ echo "TMUX: Created new window 'knx-usb-ws'"
 sleeper
 
 echo "Autostart done";
+echo "";
+echo "Run tmux a";
 echo -ne '\n\n' > /dev/null 2>&1 </dev/null
