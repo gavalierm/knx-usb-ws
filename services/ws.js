@@ -22,6 +22,11 @@ const interval = setInterval(function ping() {
     });
 }, 15000);
 
+function heartbeat() {
+    console.log("heartbeat for", this.ip);
+    this.isAlive = true;
+}
+
 function asJson(str) {
     var json = false;
     try {
@@ -50,6 +55,7 @@ function init() {
     wss.on('connection', function connection(ws, req) {
         //console.log("WS: Connection received", req.headers);
         //
+        ws.on('pong', heartbeat);
         ws.ip = req.socket.remoteAddress;
         //
         ws.client_uuid = req.headers['sec-websocket-key'];
@@ -59,11 +65,6 @@ function init() {
             console.log("WS: Wellcome", ws.client_uuid, ws.ip);
             ws.isAlive = true;
         }
-        //
-        ws.on('pong', function() {
-            //console.log("Pong for", this.ip);
-            this.isAlive = true;
-        });
         //
         ws.on('message', function message(data) {
             data = data.toString().trim();

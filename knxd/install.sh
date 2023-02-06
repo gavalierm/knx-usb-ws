@@ -91,6 +91,8 @@ sync
 
 cmd="@reboot /home/pi/Projects/knx-usb-ws/auto_tmuxer.sh >>/tmp/knx_cron.log 2>&1"
 (crontab -u pi -l; echo "$cmd" ) | crontab -u pi -
+cmd="0 1 * * * /home/pi/Projects/knx-usb-ws/auto_tmuxer.sh >>/tmp/knx_cron.log 2>&1"
+(crontab -u pi -l; echo "$cmd" ) | crontab -u pi -
 
 
 echo "Please reboot"
