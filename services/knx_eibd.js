@@ -70,7 +70,8 @@ function openListener() {
 // This function sends a message to the bus. An example use of WriteToBus...
 // WriteToBus("0/2/40", "DPT1", 0, callback);
 function sendToBus(data, callback) {
-  //console.log("KNX: Send", data);
+  console.log("KNX: Send", eibdconn, data);
+  return;
   if (!isConnected()) {
     //
     data_to_resend = data;
