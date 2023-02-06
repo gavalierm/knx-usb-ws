@@ -8,7 +8,7 @@ var cron = require('./services/cron'); //run sheduled crons
 cron.CRON_init();
 //
 var knx = require('./services/knx_eibd');
-//knx.KNX_init();
+knx.KNX_init();
 //
 var ws = require('./services/ws');
 ws.WS_init();
