@@ -83,7 +83,7 @@ cron.CRON_schedule('0 0 * * *', "Central OFF", action_central_off);
 //
 //
 ws.WS_event.on("message", function(data) {
-    console.log("DATA MESS", data);
+    //console.log("DATA MESS", data);
     var data_ = ws.WS_asJson(data);
     if (!data_) {
         data_ = ws.WS_asString(data);
@@ -92,7 +92,7 @@ ws.WS_event.on("message", function(data) {
             return;
         }
         //
-        console.warn("DATA", data_);
+        //console.warn("DATA", data_);
         //
         data_ = data_.split(" ");
         if (!data_[0] && !data_[1]) {
@@ -102,9 +102,9 @@ ws.WS_event.on("message", function(data) {
         //
         for (var i = 0; i < translator.length; i++) {
             var trs = translator[i];
-            console.log(trs);
+            //console.log(trs);
             if (trs.name.toUpperCase() != data_[1]) {
-                console.log("skip", trs);
+                //console.log("skip", trs);
                 continue;
             }
             if (data_[2] && !trs.value) {

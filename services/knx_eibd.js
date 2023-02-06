@@ -70,16 +70,7 @@ function openListener() {
 // This function sends a message to the bus. An example use of WriteToBus...
 // WriteToBus("0/2/40", "DPT1", 0, callback);
 function sendToBus(data, callback) {
-  console.log("KNX: Send", eibdconn, data);
-  //return;
-  if (!isConnected()) {
-    //
-    data_to_resend = data;
-    //
-    console.error('KNX: Not connected');
-    //checkStatus();
-    //return;
-  }
+  //console.log("KNX: Send", eibdconn, data);
   //
   if (!data) {
     console.error('KNX: No valid data');
@@ -88,6 +79,14 @@ function sendToBus(data, callback) {
   //
   console.log('KNX: Sending data ...', data);
   eibdconn.socketRemote({ host: opts.host, port: opts.port }, function() {
+    if (!isConnected()) {
+      //
+      data_to_resend = data;
+      //
+      console.error('KNX: Not connected');
+      //checkStatus();
+      //return;
+    }
     eibdconn.openTGroup(eibd.str2addr(data.dst_addr), 0, function(err) {
       if (err) {
         console.error("KNX: sendToBus failed", err);
