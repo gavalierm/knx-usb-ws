@@ -108,7 +108,7 @@ ws.WS_event.on("message", function(data) {
                 continue;
             }
             console.log("DATA VALUE", data_[2]);
-            if (!(data_[2] === undefined || data_[2] === '') && !trs.value) {
+            if (data_[2] !== undefined || data_[2] !== '') {
                 trs.value = data_[2];
             }
             data_ = trs;
