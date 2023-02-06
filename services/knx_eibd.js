@@ -27,7 +27,7 @@ function humanType(dpt_type) {
 
 function isConnected() {
   if (eibdconn.socket) {
-    if (eibdconn.socket.writeable) {
+    if (eibdconn.socket.writable) {
       return true;
     }
   }
