@@ -24,7 +24,7 @@ function scheduleCron(cron_time, message, callback) {
 }
 //
 function init() {
-  scheduleCron('* * * * *', "I m working");
+  scheduleCron('*/15 * * * *', "I m working");
 }
 exports.CRON_init = init;
 exports.CRON_schedule = scheduleCron;
