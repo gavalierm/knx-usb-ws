@@ -17,48 +17,48 @@ ws.WS_init();
 var translator = [
     //switch
     {
-        name: "schody",
-        dst_addr: '0/0/4',
-        dpt_type: 'DPT1'
-    },
-    {
-        name: "zvukari",
-        dst_addr: '0/0/3',
-        dpt_type: 'DPT1'
-    },
-    {
-        name: "sala",
-        dst_addr: '0/0/2',
-        dpt_type: 'DPT1'
-    },
-    {
-        name: "podium",
+        name: "central",
         dst_addr: '0/0/1',
         dpt_type: 'DPT1'
     },
     {
-        name: "central",
-        dst_addr: '0/0/5',
+        name: "schody",
+        dst_addr: '0/1/0',
+        dpt_type: 'DPT1'
+    },
+    {
+        name: "zvukari",
+        dst_addr: '0/2/0',
+        dpt_type: 'DPT1'
+    },
+    {
+        name: "sala",
+        dst_addr: '0/3/0',
+        dpt_type: 'DPT1'
+    },
+    {
+        name: "podium",
+        dst_addr: '0/4/0',
         dpt_type: 'DPT1'
     },
     //scene
     {
         name: "uvod",
-        dst_addr: '0/1/0',
-        dpt_type: 'DPT5',
-        value: 0
-    },
-    {
-        name: "chvaly",
-        dst_addr: '0/1/1',
+        dst_addr: '1/0/0',
         dpt_type: 'DPT5',
         value: 1
     },
     {
-        name: "kazen",
-        dst_addr: '0/1/2',
+        name: "chvaly",
+        dst_addr: '1/1/0',
         dpt_type: 'DPT5',
         value: 2
+    },
+    {
+        name: "kazen",
+        dst_addr: '1/2/0',
+        dpt_type: 'DPT5',
+        value: 3
     },
 ];
 //
