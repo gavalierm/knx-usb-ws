@@ -41,7 +41,12 @@ var translator = [
         dst_addr: '0/4/0',
         dpt_type: 'DPT1'
     },
-    //scene
+    //scene    
+    {
+        name: "scene",
+        dst_addr: '1/0/0',
+        dpt_type: 'DPT5'
+    },
     {
         name: "uvod",
         dst_addr: '1/0/0',
