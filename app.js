@@ -46,19 +46,19 @@ var translator = [
         name: "uvod",
         dst_addr: '1/0/0',
         dpt_type: 'DPT5',
-        value: 1
+        value: 0 //address is zero based, in KNX ETS sw is scene ID 1
     },
     {
         name: "chvaly",
         dst_addr: '1/1/0',
         dpt_type: 'DPT5',
-        value: 2
+        value: 1
     },
     {
         name: "kazen",
         dst_addr: '1/2/0',
         dpt_type: 'DPT5',
-        value: 3
+        value: 2
     },
 ];
 //
