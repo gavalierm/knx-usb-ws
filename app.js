@@ -89,7 +89,9 @@ cron.CRON_schedule('0 0 * * *', "Central OFF", action_central_off);
 //
 ws.WS_event.on("message", function(data) {
     //console.log("DATA MESS", data);
-    var data_ = ws.WS_asJson(data);
+    let data_;
+    
+    data_ = ws.WS_asJson(data);
     if (!data_) {
         data_ = ws.WS_asString(data);
         if (!data_) {
@@ -99,26 +101,53 @@ ws.WS_event.on("message", function(data) {
         //
         //console.warn("DATA", data_);
         //
-        data_ = data_.split(" ");
+        data_ = data_.trim().split(" ");
         if (!data_[0] && !data_[1]) {
             console.log("APP: No correct message from WS");
             return;
         }
         //
-        for (var i = 0; i < translator.length; i++) {
-            var trs = translator[i];
-            //console.log(trs);
-            if (trs.name.toUpperCase() != data_[1].toUpperCase()) {
-                //console.log("skip", trs);
-                continue;
-            }
-            if (data_[2] !== undefined && data_[2] !== 'undefined' && data_[2] !== '') {
-                console.log("DATA VALUE", data_[2]);
-                trs.value = data_[2];
-            }
-            data_ = trs;
-            break;
+
+        switch (data_[0].trim().toUpperCase()) {
+            case "SCENE":
+                for (var i = 0; i < translator.length; i++) {
+                    var trs = translator[i];
+                    //console.log(trs);
+                    if (trs.name.trim().toUpperCase() != data_[1].trim().toUpperCase()) {
+                        //console.log("skip", trs);
+                        continue;
+                    }
+                    if (data_[2] !== undefined && data_[2] !== 'undefined' && data_[2] !== '') {
+                        console.log("DATA VALUE", data_[2]);
+                        trs.value = data_[2];
+                    }
+                    data_ = trs;
+                    break;
+                }
+                break;
+            case "ADDR":
+                let trs = {
+                    dst_addr: undefined,
+                    dpt_type: 'DPT1',
+                    value: undefined
+                }
+                if (data_[1] !== undefined && data_[1] !== 'undefined' && data_[1] !== '') {
+                    trs.dst_addr = data_[1];
+                } else {
+                    return;
+                }
+                if (data_[2] !== undefined && data_[2] !== 'undefined' && data_[2] !== '') {
+                    console.log("DATA VALUE", data_[2]);
+                    trs.value = data_[2];
+                } else {
+                    return;
+                }
+                data_ = trs;
+                break;
         }
+    }
+    if (!data_) {
+        return;
     }
     console.log("APP: Brdiging to KNX", data_);
     knx.KNX_send(data_);
