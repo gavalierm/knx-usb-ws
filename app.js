@@ -90,7 +90,7 @@ cron.CRON_schedule('0 0 * * *', "Central OFF", action_central_off);
 ws.WS_event.on("message", function(data) {
     //console.log("DATA MESS", data);
     let data_;
-    
+    let trs;
     data_ = ws.WS_asJson(data);
     if (!data_) {
         data_ = ws.WS_asString(data);
@@ -110,7 +110,6 @@ ws.WS_event.on("message", function(data) {
 
         switch (data_[0].trim().toUpperCase()) {
             case "SCENE":
-                let trs;
                 for (var i = 0; i < translator.length; i++) {
                     trs = translator[i];
                     //console.log(trs);
@@ -127,7 +126,7 @@ ws.WS_event.on("message", function(data) {
                 }
                 break;
             case "ADDR":
-                let trs = {
+                trs = {
                     dst_addr: undefined,
                     dpt_type: 'DPT1',
                     value: undefined
