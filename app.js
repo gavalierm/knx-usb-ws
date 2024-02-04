@@ -110,8 +110,9 @@ ws.WS_event.on("message", function(data) {
 
         switch (data_[0].trim().toUpperCase()) {
             case "SCENE":
+                let trs;
                 for (var i = 0; i < translator.length; i++) {
-                    var trs = translator[i];
+                    trs = translator[i];
                     //console.log(trs);
                     if (trs.name.trim().toUpperCase() != data_[1].trim().toUpperCase()) {
                         //console.log("skip", trs);
