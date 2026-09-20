@@ -282,6 +282,21 @@ ws.WS_event.on("connection", function(client) {
         console.log("APP: New client, no cached bus state to send yet");
         return;
     }
+    // A scene is an event, not a state. Once a circuit has been touched since
+    // it was recalled - CENTRAL OFF, say - no scene is in effect any more, so
+    // replaying it would have the client highlight a scene over a dark hall.
+    // Dropped from the replay rather than sent and corrected.
+    var newest_switch = 0;
+    addresses.forEach(function(a) {
+        if (last_state[a].message.indexOf('SWITCH ') === 0 && last_state[a].at > newest_switch) {
+            newest_switch = last_state[a].at;
+        }
+    });
+    addresses = addresses.filter(function(a) {
+        var entry = last_state[a];
+        return !(entry.message.indexOf('SCENE ') === 0 && entry.at < newest_switch);
+    });
+
     // Oldest first, so the newest thing that happened is the last thing the
     // client hears. It matters for scenes: only one can be in effect, and a
     // client that takes the last SCENE line it receives was otherwise being
