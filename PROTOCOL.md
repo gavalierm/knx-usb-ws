@@ -105,6 +105,27 @@ A bus event on an address that is not in the table is still forwarded — but un
 
 Clients must tolerate this. It means a light exists on the bus that `app.js` does not know about.
 
+### State replay on connect
+
+Since 2026-09-20, a client receives the bridge's last known state for every group address **immediately after connecting**, before anything else happens on the bus.
+
+The lines are ordinary bus-event lines — identical in form to the ones above — so a client needs no special handling and no new code. Companion simply updates its buttons.
+
+```
+SWITCH CENTRAL 1
+SWITCH SALA 0
+SCENE KAZEN 2
+```
+
+Why it exists: until then, a client that connected knew nothing until someone pressed something, so every bridge restart left the Streamdeck and the phone showing stale state with no indication anything was wrong.
+
+Two limits worth knowing:
+
+- **The bridge only knows what it has seen.** Its cache starts empty at startup, so an address that has not carried a telegram since the bridge started is not replayed. Reading the addresses from the bus at startup would close this and is planned separately.
+- **An address that is not in the table is never cached**, because the line carries no usable state — see the hazard below.
+
+A client that connects and receives nothing is therefore not necessarily talking to a broken bridge; it may be talking to one that has just started.
+
 ### Command echo
 
 Every inbound frame is **multicast to all other connected clients verbatim**, before it is parsed, and regardless of whether it was valid. A client that sends `ADDR 0/0/1 1` will not see its own echo; every other client will.
