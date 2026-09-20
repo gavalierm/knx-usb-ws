@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Read `../CLAUDE.md` first for the system-wide picture, deployment paths and hard constraints. Read `PROTOCOL.md` before changing anything about messages — it is a contract with an external consumer.
 
+**Read `MAINTENANCE.md` before forming any theory about this system**, in particular its "wrong turns" table and the "disproven" list. Both exist so the same wrong conclusions are not reached twice. Adding to that table when one of your own claims turns out wrong is required, not optional — the rule and the reasoning are in `../CLAUDE.md`.
+
 ## What this is
 
 A Node.js bridge running on a Raspberry Pi on-site. It translates between a WebSocket server (port **9240**) and the KNX bus, reached through the `knxd` daemon on `localhost:6720` and a MEAN WELL KNX-USB interface.
