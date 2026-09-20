@@ -14,6 +14,7 @@ var ws = require('./services/ws');
 ws.WS_init();
 //
 var parser = require('./services/parser');
+var health = require('./services/health');
 //
 // Last line of defence. Nothing supervises this process: tmux does not restart
 // it and cron only runs at 01:00, so an uncaught exception means the hall loses
@@ -100,12 +101,28 @@ cron.CRON_schedule('0 0 * * *', "Central OFF", action_central_off);
 // BRIDGE WORKER
 //
 //
-ws.WS_event.on("message", function(data) {
+ws.WS_event.on("message", function(data, client) {
     // Parsing lives in services/parser.js so it can be tested without sockets.
     // Anything it rejects used to reach the bus layer and terminate the process.
     var result = parser.PARSER_parse(data, translator);
     if (result.rejected) {
         console.warn("APP: Rejected frame from WS -", result.rejected, "|", String(data));
+        return;
+    }
+    if (result.query === 'HEALTH') {
+        // Answer the client that asked, not everyone. Nothing reaches the bus.
+        var lines = health.HEALTH_report({
+            knxd_connected: knx.KNX_status().connected,
+            listening: knx.KNX_status().listening,
+            clients: ws.WS_clients(),
+            addresses: Object.keys(distinctAddresses()).length,
+            known: Object.keys(last_state).length,
+            last_bus_at: last_bus_at
+        });
+        console.log("APP: HEALTH asked by a client");
+        for (var i = 0; i < lines.length; i++) {
+            ws.WS_sendTo(client, lines[i]);
+        }
         return;
     }
     console.log("APP: Brdiging to KNX", result.message);
@@ -123,6 +140,19 @@ var last_state = {};
 // Counts telegrams that arrived as a reply to a read request, so the bridge can
 // report whether asking the bus achieved anything.
 var responses_seen = 0;
+// When the bridge last saw anything at all on the bus. Age of this is a better
+// health signal than "is the socket open": the socket can be fine while the
+// bus is dead.
+var last_bus_at = null;
+
+// The table lists nine entries but only eight addresses - 1/0/0 appears twice.
+function distinctAddresses() {
+    var seen = {};
+    for (var i = 0; i < translator.length; i++) {
+        seen[translator[i].dst_addr] = true;
+    }
+    return seen;
+}
 
 knx.KNX_event.on("message", function(data) {
     if (!data) {
@@ -132,6 +162,7 @@ knx.KNX_event.on("message", function(data) {
     if (data.kind === 'response') {
         responses_seen++;
     }
+    last_bus_at = Date.now();
     //translator
     var message = null;
     for (var i = 0; i < translator.length; i++) {
@@ -173,14 +204,7 @@ knx.KNX_event.on("message", function(data) {
 // Runs again after every reconnect, because a listener that was detached has
 // missed whatever happened while it was away.
 function refreshBusState() {
-    var seen = {};
-    var addresses = [];
-    for (var i = 0; i < translator.length; i++) {
-        if (!seen[translator[i].dst_addr]) {
-            seen[translator[i].dst_addr] = true;
-            addresses.push(translator[i].dst_addr);
-        }
-    }
+    var addresses = Object.keys(distinctAddresses());
     console.log("APP: Asking the bus about " + addresses.length + " addresses");
     var before = responses_seen;
     addresses.forEach(function(addr, index) {

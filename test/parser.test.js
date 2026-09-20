@@ -54,6 +54,15 @@ test('SCENE with an explicit value overwrites the stored one (documented quirk)'
     assert.strictEqual(message.value, '5', 'the overwrite outlives the frame, by design');
 });
 
+test('HEALTH is a query, not a telegram', () => {
+    const result = PARSER_parse('HEALTH', translator());
+    assert.strictEqual(result.query, 'HEALTH');
+    assert.strictEqual(result.message, undefined, 'nothing may reach the bus');
+    assert.strictEqual(result.rejected, undefined);
+    // Case-insensitive like every other verb.
+    assert.strictEqual(PARSER_parse('health', translator()).query, 'HEALTH');
+});
+
 //
 // Everything below used to terminate the process.
 //

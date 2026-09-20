@@ -18,6 +18,7 @@ var data_to_resend = null;
 var eibdconn = new eibd.Connection();
 var listenerconn = null;
 var listener_timeout = null;
+var listening = false;
 
 function humanType(dpt_type) {
   switch (dpt_type) {
@@ -94,6 +95,7 @@ function openListener() {
   listenerconn = new eibd.Connection();
 
   listenerconn.on('close', function() {
+    listening = false;
     console.warn('EIBD: listener connection closed - reattaching in 5s');
     scheduleListenerRetry();
   });
@@ -105,6 +107,7 @@ function openListener() {
       return;
     }
     listenerconn.openGroupSocket(0, function(parser) {
+      listening = true;
       console.log('EIBD: Listening for KNX events');
 
       function received(kind) {
@@ -228,6 +231,12 @@ function readFromBus(dst_addr, callback) {
   });
 }
 //
+// What the bridge can say about its own link to the bus, for the status panel.
+function status() {
+  return { connected: isConnected(), listening: listening };
+}
+//
+exports.KNX_status = status;
 exports.KNX_init = init;
 exports.KNX_send = sendToBus;
 exports.KNX_read = readFromBus;

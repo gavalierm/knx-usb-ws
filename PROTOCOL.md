@@ -56,6 +56,29 @@ SCENE chvaly 1
 
 `ADDR`, `addr` and `Addr` are equivalent. The same applies to scene names.
 
+### 4. `HEALTH`
+
+Asks the bridge about itself. **Nothing reaches the bus** — this is a question, not a telegram, and it is safe to send at any time, including during a programme.
+
+The answer goes only to the client that asked, one line per fact, in the same three-token shape as everything else:
+
+```
+HEALTH KNXD 1          connected to knxd
+HEALTH LISTENER 1      the bus listener is attached
+HEALTH USB 1           the MEAN WELL interface is on the USB bus
+HEALTH CLIENTS 2       WebSocket clients connected right now
+HEALTH UPTIME 3600     seconds since the bridge started
+HEALTH ADDRESSES 8     distinct group addresses the bridge knows of
+HEALTH KNOWN 3         of those, how many it has current state for
+HEALTH LASTBUS 42      seconds since the last telegram it saw
+```
+
+**`-1` means "cannot determine", and is not the same as `0`.** `USB -1` is returned where the check is impossible — on a host without `/sys/bus/usb`, for instance — and `LASTBUS -1` means no telegram has been seen yet, which after a restart is normal rather than alarming.
+
+Why it matters: a client can otherwise only tell whether *its own socket* is open. The socket stays up perfectly well while knxd is dead or the bus is unreachable, which is exactly the "it says connected but nothing works" experience.
+
+Added 2026-09-20. Purely additive — a client that never sends `HEALTH` sees nothing new.
+
 ### Hazard: malformed frames terminate the server
 
 Invalid input is not rejected — it kills the process. There is no `try/catch` in the bridge and no `process.on('uncaughtException')`, so the exception ends it. Nothing restarts it until the `01:00` cron or a reboot, which means the hall loses lighting control for the rest of the event.

@@ -112,6 +112,12 @@ function parse(raw, translator) {
             message = { dst_addr: tokens[1], dpt_type: 'DPT1', value: tokens[2] };
             break;
 
+        case 'HEALTH':
+            // A question, not a telegram. Nothing reaches the bus; the caller
+            // answers the client that asked. Added 2026-09-20 for the status
+            // panel in the phone app - see PROTOCOL.md.
+            return { query: 'HEALTH' };
+
         default:
             return { rejected: 'unknown command: ' + verb };
     }

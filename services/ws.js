@@ -72,7 +72,9 @@ function init() {
         ws.on('message', function message(data) {
             data = data.toString().trim();
             multicast(ws, data);
-            ws_emitter.emit('message', data);
+            // The socket goes with the message so the application can answer
+            // the client that asked, rather than telling everyone.
+            ws_emitter.emit('message', data, ws);
         });
         //
         // A client that has just connected knows nothing about the bus and
@@ -115,9 +117,20 @@ function multicast(ws, data) {
     });
 }
 //
+function clientCount() {
+    var n = 0;
+    wss.clients.forEach(function(client) {
+        if (client.readyState === 1) {
+            n++;
+        }
+    });
+    return n;
+}
+
 exports.WS_init = init;
 exports.WS_send = broadcast;
 exports.WS_sendTo = sendTo;
+exports.WS_clients = clientCount;
 exports.WS_event = ws_emitter;
 exports.WS_asJson = asJson;
 exports.WS_asString = asString;
