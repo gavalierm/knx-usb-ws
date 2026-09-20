@@ -128,6 +128,27 @@ Applied to the production machine:
 
 No lights changed at any point. Every telegram sent was a recall of the scene that was already active.
 
+### Wrong turns taken in this pass — read before the next one
+
+Recorded because every one of them was stated with confidence and then
+contradicted by a measurement that took under a minute. The common thread: this
+codebase is from 2017–2023 and runs on 2021 infrastructure, so instincts from
+current practice mislead. **Measure before asserting a mechanism.**
+
+| Claimed | Actually | Cost of checking |
+|---|---|---|
+| `eibd` is a native module that compiles on the Pi, so `npm ci` in a night cron is risky | Pure JavaScript. No `binding.gyp`, no `.node`, nothing compiles anywhere in this project. It was the main argument for keeping `node_modules` vendored | one `find` |
+| 181 knxd start/stop events in the journal means knxd is unstable | That is the nightly reboot. One genuine failure in 90 days | one `journalctl --list-boots` |
+| The knxd client-address pool is probably leaking and exhausting | Two sockets, four FDs. Addresses recycle. Wasteful design, harmless | one `ss` |
+| A push reaches the Pi "at 01:00 or the next reboot" | The boot pull fails every time — cron fires at 02:00:1x, the DHCP lease lands at 02:00:20. Only the 01:00 run ever deploys | one `grep` of the cron log |
+| `engines: node >=10` means the new `ws` runs on Node 12 | That field is a claim, not a check. It happened to be true; had the package used optional chaining it would have failed on the machine | one `grep` for `?.` and `??` |
+| `status.sh` reported the bus listener as detached | Its own check was inverted: `journalctl \| grep -q` under `pipefail` reports failure because grep exits first and journalctl takes SIGPIPE | running it once |
+
+Two more worth carrying:
+
+- **`ssh knxrpi` does not resolve.** It is `ssh pi@knxrpi.local` (10.77.8.208). Written down because it cost a round trip.
+- **`last` is useless on this machine.** No RTC, so boot records are written before NTP syncs and all show `Thu Jan 1 01:00`. Use `journalctl --list-boots`, and remember `journalctl -b` only covers the current boot — which here means since 02:00 this morning.
+
 ### Disproven — do not re-investigate
 
 - **knxd instability.** 181 start/stop events across 90 days of journal are the nightly reboot, not failures. One genuine failure in that period (2026-09-16).
