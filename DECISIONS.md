@@ -18,6 +18,14 @@ This log covers both repositories in the workspace. Newest last, so it reads as 
 
 **Superseded:** an earlier arrangement in this same session had the operator approving every deployment and every SSH login. That was replaced twice, in the direction of more autonomy. What stands is below.
 
+### Do not ask for approval on product decisions
+
+Stated plainly on 2026-09-20: *"nepýtaj sa ma, si vlastník projektu, takže to inovuj podľa vlastného uváženia."*
+
+Design and product judgement — what a feature should look like, what goes in the interface, what is worth building next — is the agent's to exercise, not to put to a vote. Decide, build it, report what was built and why.
+
+This does not touch the one prohibition (no unexpected light changes during a programme) or the one obligation (announce each SSH login). Those stay.
+
 ### What the agent must do
 
 - **Announce each SSH login to the Pi beforehand.** Notification, not a request.
