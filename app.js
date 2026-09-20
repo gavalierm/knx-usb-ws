@@ -154,6 +154,37 @@ knx.KNX_event.on("message", function(data) {
     ws.WS_send(message);
 });
 //
+// Ask the bus what everything currently is, rather than waiting for somebody
+// to change it. Without this the cache only fills from traffic, so after a
+// restart a client sees "unknown" for every circuit nobody has touched yet -
+// which in practice meant blank buttons for the five switches while the
+// scenes, which do get pressed, showed correctly.
+//
+// A read cannot move a light. Sequenced anyway: knxd hands out client
+// addresses from a pool of eight (--client-addrs=1.1.129:8) and each send
+// takes a fresh connection, so firing all of them at once would crowd it.
+//
+// Runs again after every reconnect, because a listener that was detached has
+// missed whatever happened while it was away.
+function refreshBusState() {
+    var seen = {};
+    var addresses = [];
+    for (var i = 0; i < translator.length; i++) {
+        if (!seen[translator[i].dst_addr]) {
+            seen[translator[i].dst_addr] = true;
+            addresses.push(translator[i].dst_addr);
+        }
+    }
+    console.log("APP: Asking the bus about " + addresses.length + " addresses");
+    addresses.forEach(function(addr, index) {
+        setTimeout(function() {
+            knx.KNX_read(addr);
+        }, index * 400);
+    });
+}
+
+knx.KNX_event.on("listening", refreshBusState);
+//
 // Bring a newly connected client up to date, using the ordinary outbound
 // format. Nothing new to learn on the client side: Companion already
 // understands these lines and simply updates its buttons.

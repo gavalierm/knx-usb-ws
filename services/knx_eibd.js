@@ -106,14 +106,29 @@ function openListener() {
     }
     listenerconn.openGroupSocket(0, function(parser) {
       console.log('EIBD: Listening for KNX events');
-      parser.on('write', function(src_addr, dst_addr, dpt_type, value) {
-        var date = new Date().toJSON();
-        var knx_json_obj = { 'src_addr': src_addr, 'dst_addr': dst_addr, 'dpt_type': dpt_type, 'value': value, 'time': date };
-        //
-        console.log('KNX: Received', knx_json_obj);
-        //
-        knx_emitter.emit('message', knx_json_obj);
-      });
+
+      function received(kind) {
+        return function(src_addr, dst_addr, dpt_type, value) {
+          var date = new Date().toJSON();
+          var knx_json_obj = { 'src_addr': src_addr, 'dst_addr': dst_addr, 'dpt_type': dpt_type, 'value': value, 'time': date };
+          //
+          console.log('KNX: Received (' + kind + ')', knx_json_obj);
+          //
+          knx_emitter.emit('message', knx_json_obj);
+        };
+      }
+
+      parser.on('write', received('write'));
+      // Devices answer a read request with a 'response' telegram. The bridge
+      // ignored those entirely, which is why asking the bus what it was doing
+      // was not possible and state could only be learned by watching someone
+      // change something.
+      parser.on('response', received('response'));
+
+      // The listener is the thing that makes reading worthwhile, so the signal
+      // to go and ask belongs here - including after a reconnect, when the
+      // bridge has just missed however much traffic.
+      knx_emitter.emit('listening');
     });
   });
 }
@@ -174,7 +189,47 @@ function init() {
   //console.log(eibdconn);
 }
 //
+// Ask the bus what an address currently is, instead of waiting for someone to
+// change it. A GroupValueRead alters nothing - devices that hold the address
+// answer with a 'response' telegram, which the listener above turns into the
+// same message as any other state change.
+//
+// Safe to call during a programme: it cannot move a light.
+//
+function readFromBus(dst_addr, callback) {
+  if (!dst_addr) {
+    return;
+  }
+  eibdconn.socketRemote({ host: opts.host, port: opts.port }, function() {
+    if (!isConnected()) {
+      console.error('KNX: Not connected, skipping read of', dst_addr);
+      return;
+    }
+    try {
+      var addr = eibd.str2addr(dst_addr);
+      if (addr instanceof Error) {
+        console.error('KNX: unparseable address, not reading', dst_addr);
+        return;
+      }
+      eibdconn.openTGroup(addr, 0, function(err) {
+        if (err) {
+          console.error('KNX: read failed for', dst_addr, err);
+          return;
+        }
+        try {
+          eibdconn.sendAPDU(eibd.createMessage('read'), callback);
+        } catch (e) {
+          console.error('KNX: read threw for', dst_addr, e);
+        }
+      });
+    } catch (e) {
+      console.error('KNX: read threw for', dst_addr, e);
+    }
+  });
+}
+//
 exports.KNX_init = init;
 exports.KNX_send = sendToBus;
+exports.KNX_read = readFromBus;
 exports.KNX_event = knx_emitter;
 exports.KNX_humanType = humanType;

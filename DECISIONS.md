@@ -51,6 +51,25 @@ Innovation means proposing better ways — for example questioning whether WebSo
 - **Frontend work is verified with the dev server**, from a machine on the hall network, with the operator checking from his phone. Publishing to FTP is only the last step and its absence blocks nothing before that.
 - **The phone app is published at `http://knx.tymy.sk`.** Given by the operator 2026-09-20, closing a gap recorded earlier the same day. The host already redirects `https://` **down** to `http://` (302, openresty), which is what keeps `ws://` working — that redirect must be protected, not corrected. FTP credentials are still unknown.
 
+### Requested, not yet built
+
+**A status dashboard in the phone app, behind a hamburger menu** — asked for 2026-09-20. It should show the USB interface state, the knxd connection, the bus state and the like: collapsed by default, expanded when wanted.
+
+Approach, so it does not break the contract: the bridge gains a `HEALTH` verb answering in the **existing three-token grammar**, one line per fact —
+
+```
+HEALTH KNXD 1
+HEALTH USB 1
+HEALTH LISTENER 1
+HEALTH CLIENTS 2
+HEALTH UPTIME 3600
+HEALTH LASTBUS 42
+```
+
+Purely additive: a client that never sends `HEALTH` sees nothing new, and one that does can parse it with the code it already has. Companion could bind a button to a health value without anything being written for it specially.
+
+Note what the bridge can honestly report. knxd connection, listener state, client count, uptime and the age of the last telegram it knows directly. USB presence it does not — that needs reading `/sys/bus/usb/devices` for `28c2:0013`. Report what is known and say so; a dashboard that guesses is worse than one with a gap.
+
 ### Network
 
 **The Pi is reached as `knxrpi.lan` at a static 10.77.8.208.** The operator added the router record and the reservation on 2026-09-20, after it was measured that `knxrpi.local` — served by avahi on the Pi — costs 5.03 s per lookup because `.local` is reserved for mDNS and goes to multicast, which is slow or filtered on this network.
