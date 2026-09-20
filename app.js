@@ -112,27 +112,61 @@ ws.WS_event.on("message", function(data) {
     knx.KNX_send(result.message);
 });
 //
+//
+// Last known state of the bus, keyed by group address, holding the exact line
+// that was broadcast for it. A client that connects gets this replayed, so it
+// shows the truth immediately instead of waiting for someone to press
+// something. Before this, every bridge restart left Companion and the phone
+// app displaying stale buttons with no sign anything was wrong.
+//
+var last_state = {};
+
 knx.KNX_event.on("message", function(data) {
-    var data_ = data;
-    if (!data_) {
-        console.log("APP: No valid JSON data from KNX event", data_);
+    if (!data) {
+        console.log("APP: No valid JSON data from KNX event", data);
         return;
     }
     //translator
+    var message = null;
     for (var i = 0; i < translator.length; i++) {
         var trs = translator[i];
-        if (trs.dst_addr != data_.dst_addr) {
+        if (trs.dst_addr != data.dst_addr) {
             continue;
         }
-        if (!knx.KNX_humanType(data_.dpt_type)) {
+        var human = knx.KNX_humanType(data.dpt_type);
+        if (!human) {
             return;
         }
-        data_ = knx.KNX_humanType(data_.dpt_type) + " " + trs.name + " " + data_.value; //scene name on
-        data_ = data_.toUpperCase();
+        message = (human + " " + trs.name + " " + data.value).toUpperCase(); //scene name on
         break;
     }
-    console.log("APP: Brdiging to WS", data_);
-    ws.WS_send(data_);
+    if (message === null) {
+        // Address is not in the table. Preserved behaviour: the raw object goes
+        // out and clients receive the literal string "[object Object]". Ugly,
+        // documented in PROTOCOL.md, and left alone because a client may key on
+        // it. Not cached - it carries no usable state.
+        console.log("APP: Brdiging to WS", data);
+        ws.WS_send(data);
+        return;
+    }
+    last_state[data.dst_addr] = message;
+    console.log("APP: Brdiging to WS", message);
+    ws.WS_send(message);
+});
+//
+// Bring a newly connected client up to date, using the ordinary outbound
+// format. Nothing new to learn on the client side: Companion already
+// understands these lines and simply updates its buttons.
+ws.WS_event.on("connection", function(client) {
+    var addresses = Object.keys(last_state);
+    if (!addresses.length) {
+        console.log("APP: New client, no cached bus state to send yet");
+        return;
+    }
+    console.log("APP: Replaying " + addresses.length + " cached states to new client");
+    for (var i = 0; i < addresses.length; i++) {
+        ws.WS_sendTo(client, last_state[addresses[i]]);
+    }
 });
 //
 //

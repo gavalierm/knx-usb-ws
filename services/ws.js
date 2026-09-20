@@ -75,6 +75,11 @@ function init() {
             ws_emitter.emit('message', data);
         });
         //
+        // A client that has just connected knows nothing about the bus and
+        // shows stale state until something happens to change it. Let the
+        // application answer that.
+        ws_emitter.emit('connection', ws);
+        //
         ws.on('error', console.error);
     });
     //
@@ -93,6 +98,14 @@ function broadcast(data) {
     });
 }
 
+// Send to one client only. Used to bring a client that has just connected up
+// to date without repeating that state to everyone already connected.
+function sendTo(ws, data) {
+    if (ws && ws.readyState === 1) {
+        ws.send(asString(data), false);
+    }
+}
+
 function multicast(ws, data) {
     console.log('WS: Multicasting: ', data);
     wss.clients.forEach(function each(client) {
@@ -104,6 +117,7 @@ function multicast(ws, data) {
 //
 exports.WS_init = init;
 exports.WS_send = broadcast;
+exports.WS_sendTo = sendTo;
 exports.WS_event = ws_emitter;
 exports.WS_asJson = asJson;
 exports.WS_asString = asString;
