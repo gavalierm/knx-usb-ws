@@ -282,10 +282,20 @@ ws.WS_event.on("connection", function(client) {
         console.log("APP: New client, no cached bus state to send yet");
         return;
     }
-    // A scene is an event, not a state. Once a circuit has been touched since
-    // it was recalled - CENTRAL OFF, say - no scene is in effect any more, so
-    // replaying it would have the client highlight a scene over a dark hall.
-    // Dropped from the replay rather than sent and corrected.
+    // A scene is an event, not a state: once a circuit has been touched
+    // independently - CENTRAL OFF, say - no scene is in effect any more, and
+    // replaying it would light a scene button over a dark hall.
+    //
+    // But a scene recall switches circuits itself, and the actuators report it.
+    // Measured on this bus 2026-09-20: the scene telegram at 12:38:54.466 was
+    // followed by its three circuits at .755, .787 and .816 - all inside
+    // 350 ms - while a genuinely independent change came 52 seconds later.
+    // So the side effects of a scene must not be read as cancelling it.
+    //
+    // The grace window separates the two. An earlier version of this dropped
+    // any scene older than the newest switch at all, which would have
+    // cancelled every scene the moment it took effect.
+    var SCENE_GRACE_MS = 2000;
     var newest_switch = 0;
     addresses.forEach(function(a) {
         if (last_state[a].message.indexOf('SWITCH ') === 0 && last_state[a].at > newest_switch) {
@@ -294,7 +304,10 @@ ws.WS_event.on("connection", function(client) {
     });
     addresses = addresses.filter(function(a) {
         var entry = last_state[a];
-        return !(entry.message.indexOf('SCENE ') === 0 && entry.at < newest_switch);
+        if (entry.message.indexOf('SCENE ') !== 0) {
+            return true;
+        }
+        return entry.at > newest_switch - SCENE_GRACE_MS;
     });
 
     // Oldest first, so the newest thing that happened is the last thing the
