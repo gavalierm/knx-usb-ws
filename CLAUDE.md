@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Read `../CLAUDE.md` first for the system-wide picture, deployment paths and hard constraints. Read `PROTOCOL.md` before changing anything about messages — it is a contract with an external consumer.
 
-**Read `MAINTENANCE.md` before forming any theory about this system**, in particular its "wrong turns" table and the "disproven" list. Both exist so the same wrong conclusions are not reached twice. Adding to that table when one of your own claims turns out wrong is required, not optional — the rule and the reasoning are in `../CLAUDE.md`.
+**Read `DECISIONS.md` first.** It is the standing record of what the operator has decided — authority, constraints, what the goal actually is, and which earlier decisions were superseded. Adding to it in the turn a decision is given is required, not optional.
+
+**Read `MAINTENANCE.md` before forming any theory about this system**, in particular its "wrong turns" table and the "disproven" list. Both exist so the same wrong conclusions are not reached twice. Adding to that table when one of your own claims turns out wrong is required too. The reasoning for both rules is in `../CLAUDE.md`.
 
 ## What this is
 
