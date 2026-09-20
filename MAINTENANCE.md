@@ -179,6 +179,30 @@ The cause is not in this code. A KNX group object only answers a read when the *
 - The bridge now logs whether anyone answered, so this cannot quietly look like a working feature again.
 - If the ETS project is ever opened for anything else, enabling the Read flags on these group objects is a cheap thing to do while in there.
 
+### Status addresses exist on this bus, and the bridge was discarding them
+
+Found 2026-09-20 by listing every destination address seen in the journal and comparing against the bridge's table. `0/2/1` appeared nine times and is not in it.
+
+```
+12:26:02.073   0/2/0   1     command: switch zvukari on
+12:26:02.195   0/2/1   1     122 ms later, device 1.1.1 confirms: I am on
+
+12:26:09.072   0/2/0   0     command: off
+12:26:09.165   0/2/1   0      93 ms later, confirmation
+
+12:26:11.546   0/2/0   1     command: on
+12:26:11.651   0/2/1   1     105 ms later, confirmation
+```
+
+`0/2/1` is the **status object** for zvukari and the actuator writes it by itself after every change — the usual KNX convention of `x/y/0` for the command and `x/y/1` for the feedback. The bridge sees these telegrams, fails to find the address in its table, and broadcasts the literal string `[object Object]` to every client.
+
+Two consequences, and the second matters more:
+
+- **It does not solve state at startup.** The sending is on change, not cyclic, so after a restart there is still nothing until something moves. Reads do not help either: probes to `0/0/2`, `0/1/1`, `0/2/1`, `0/3/1`, `0/4/1` and `0/0/1` all reached the bus and **none was answered**, so the Read flag is off on the status objects too.
+- **It is a better source of truth than what is cached today.** The bridge currently remembers the *command* — what somebody asked for. The status address is what the actuator actually did. If a breaker is out or a relay does not pull in, the command says on and the status tells the truth.
+
+Only `0/2/1` is confirmed, because no other circuit was switched while anyone was watching. The convention suggests `0/1/1`, `0/3/1`, `0/4/1` and something for central, but **do not assume** — switch each circuit once and read which address answers about 100 ms later. That also seeds the persistent cache.
+
 ### Disproven — do not re-investigate
 
 - **knxd instability.** 181 start/stop events across 90 days of journal are the nightly reboot, not failures. One genuine failure in that period (2026-09-16).
