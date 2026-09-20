@@ -44,6 +44,13 @@ var translator = [
     {
         name: "zvukari",
         dst_addr: '0/2/0',
+        // The actuator writes this address by itself about 100 ms after every
+        // change - its own confirmation of what it actually did, as opposed to
+        // what somebody asked for on dst_addr. Confirmed on the bus
+        // 2026-09-20; see MAINTENANCE.md. The others almost certainly have one
+        // too, but they have not been observed, and the convention is not a
+        // fact: switch a circuit and watch which address answers.
+        status_addr: '0/2/1',
         dpt_type: 'DPT1'
     },
     {
@@ -175,9 +182,14 @@ knx.KNX_event.on("message", function(data) {
     last_bus_at = Date.now();
     //translator
     var message = null;
+    var key = null;
     for (var i = 0; i < translator.length; i++) {
         var trs = translator[i];
-        if (trs.dst_addr != data.dst_addr) {
+        // A circuit answers to two addresses: the one it is commanded on, and
+        // the one the actuator reports back on. Both mean the same light.
+        var is_command = (trs.dst_addr == data.dst_addr);
+        var is_status = (trs.status_addr && trs.status_addr == data.dst_addr);
+        if (!is_command && !is_status) {
             continue;
         }
         var human = knx.KNX_humanType(data.dpt_type);
@@ -185,6 +197,11 @@ knx.KNX_event.on("message", function(data) {
             return;
         }
         message = (human + " " + trs.name + " " + data.value).toUpperCase(); //scene name on
+        // Cache under the command address either way, so one circuit is one
+        // entry. A status telegram overwrites the command it confirms, which
+        // is the point: the command is what was asked for, the status is what
+        // the actuator did, and when a breaker is out those differ.
+        key = trs.dst_addr;
         break;
     }
     if (message === null) {
@@ -192,11 +209,15 @@ knx.KNX_event.on("message", function(data) {
         // out and clients receive the literal string "[object Object]". Ugly,
         // documented in PROTOCOL.md, and left alone because a client may key on
         // it. Not cached - it carries no usable state.
-        console.log("APP: Brdiging to WS", data);
+        //
+        // Logged by name as well, because this is how a status address gets
+        // discovered: switch a circuit and see which unknown address reports
+        // itself a tenth of a second later.
+        console.warn("APP: Unknown bus address " + data.dst_addr + " value " + data.value + " from " + data.src_addr + " - not in the table");
         ws.WS_send(data);
         return;
     }
-    last_state[data.dst_addr] = { message: message, at: Date.now() };
+    last_state[key] = { message: message, at: Date.now() };
     store.STORE_save(last_state);
     console.log("APP: Brdiging to WS", message);
     ws.WS_send(message);
