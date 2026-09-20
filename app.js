@@ -311,6 +311,14 @@ ws.WS_event.on("connection", function(client) {
         }
     });
     addresses = addresses.filter(function(a) {
+        // A command has no state. Filtered here rather than only at write
+        // time, so an entry written before that was understood - or restored
+        // from a file that predates it - does not keep being replayed.
+        for (var j = 0; j < translator.length; j++) {
+            if (translator[j].dst_addr === a && translator[j].command_only) {
+                return false;
+            }
+        }
         var entry = last_state[a];
         if (entry.message.indexOf('SCENE ') !== 0) {
             return true;
