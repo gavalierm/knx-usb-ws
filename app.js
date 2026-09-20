@@ -39,6 +39,10 @@ var translator = [
         // command sent rather than a confirmed state.
         name: "central",
         dst_addr: '0/0/1',
+        // Not a state, so it is never cached. Its last command said OFF while
+        // three circuits were lit, and replaying that reads as "everything is
+        // off" to anyone looking at the button.
+        command_only: true,
         dpt_type: 'DPT1'
     },
     {
@@ -190,6 +194,7 @@ knx.KNX_event.on("message", function(data) {
     //translator
     var message = null;
     var key = null;
+    var cache_skip = false;
     for (var i = 0; i < translator.length; i++) {
         var trs = translator[i];
         // A circuit answers to two addresses: the one it is commanded on, and
@@ -209,6 +214,7 @@ knx.KNX_event.on("message", function(data) {
         // is the point: the command is what was asked for, the status is what
         // the actuator did, and when a breaker is out those differ.
         key = trs.dst_addr;
+        cache_skip = !!trs.command_only;
         break;
     }
     if (message === null) {
@@ -224,7 +230,9 @@ knx.KNX_event.on("message", function(data) {
         ws.WS_send(data);
         return;
     }
-    last_state[key] = { message: message, at: Date.now() };
+    if (!cache_skip) {
+        last_state[key] = { message: message, at: Date.now() };
+    }
     store.STORE_save(last_state);
     console.log("APP: Brdiging to WS", message);
     ws.WS_send(message);
