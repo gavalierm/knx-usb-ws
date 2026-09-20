@@ -63,7 +63,7 @@ Asks the bridge about itself. **Nothing reaches the bus** — this is a question
 The answer goes only to the client that asked, one line per fact, in the same three-token shape as everything else:
 
 ```
-HEALTH KNXD 1          connected to knxd
+HEALTH KNXD 1          there is a live link to knxd
 HEALTH LISTENER 1      the bus listener is attached
 HEALTH USB 1           the MEAN WELL interface is on the USB bus
 HEALTH CLIENTS 2       WebSocket clients connected right now
@@ -72,6 +72,8 @@ HEALTH ADDRESSES 8     distinct group addresses the bridge knows of
 HEALTH KNOWN 3         of those, how many it has current state for
 HEALTH LASTBUS 42      seconds since the last telegram it saw
 ```
+
+`KNXD` reflects the listener's persistent connection. The sending side opens a socket per telegram and closes it in between, so its state says nothing about health — reporting that instead produced a self-contradictory `KNXD 0` next to `LISTENER 1`.
 
 **`-1` means "cannot determine", and is not the same as `0`.** `USB -1` is returned where the check is impossible — on a host without `/sys/bus/usb`, for instance — and `LASTBUS -1` means no telegram has been seen yet, which after a restart is normal rather than alarming.
 

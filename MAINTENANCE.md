@@ -144,6 +144,14 @@ current practice mislead. **Measure before asserting a mechanism.**
 | `engines: node >=10` means the new `ws` runs on Node 12 | That field is a claim, not a check. It happened to be true; had the package used optional chaining it would have failed on the machine | one `grep` for `?.` and `??` |
 | `status.sh` reported the bus listener as detached | Its own check was inverted: `journalctl \| grep -q` under `pipefail` reports failure because grep exits first and journalctl takes SIGPIPE | running it once |
 
+One more, from later the same day:
+
+| Claimed | Actually | Cost of checking |
+|---|---|---|
+| `HEALTH KNXD` reports whether the bridge is connected to knxd | It reported `isConnected()`, which is the **sender** socket — opened per send and closed in between. First live reply was `KNXD 0` alongside `LISTENER 1`: self-contradictory, because the listener holds the persistent connection and was plainly attached | Asking the deployed bridge once. The contradiction was in the first real answer it gave |
+
+The lesson is not about sockets. A health field must report the thing its **name** claims, not whichever variable happens to be nearby: `KNXD` now means "there is a live link to knxd", which the listener answers, and the sender's transient socket is not health at all.
+
 Two more worth carrying:
 
 - **`ssh knxrpi` does not resolve.** Use `ssh pi@knxrpi.lan` (10.77.8.208). Written down because it cost a round trip. During this pass only `knxrpi.local` worked, and it cost 5 s per lookup; the `.lan` record was added the same day.

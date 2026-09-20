@@ -53,7 +53,12 @@ function usbPresent() {
 function report(facts) {
     const usb = usbPresent();
     const lines = [
-        ['KNXD', facts.knxd_connected ? 1 : 0],
+        // "Connected to knxd" means the bridge holds a live link to it, which
+        // is the listener's persistent connection. The sender's socket is
+        // opened per send and closed in between, so reporting that alone gave
+        // the self-contradictory KNXD 0 / LISTENER 1 - a transient
+        // implementation detail dressed up as a health fact.
+        ['KNXD', (facts.listening || facts.knxd_connected) ? 1 : 0],
         ['LISTENER', facts.listening ? 1 : 0],
         ['USB', usb === null ? -1 : (usb ? 1 : 0)],
         ['CLIENTS', facts.clients],
