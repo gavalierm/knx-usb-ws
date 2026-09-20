@@ -13,6 +13,19 @@ knx.KNX_init();
 var ws = require('./services/ws');
 ws.WS_init();
 //
+var parser = require('./services/parser');
+//
+// Last line of defence. Nothing supervises this process: tmux does not restart
+// it and cron only runs at 01:00, so an uncaught exception means the hall loses
+// lighting control for the rest of the day. Log loudly and stay up.
+// A systemd unit with Restart=always would be the proper fix - see CLAUDE.md.
+process.on('uncaughtException', function(err) {
+    console.error('APP: Uncaught exception - staying alive', err);
+});
+process.on('unhandledRejection', function(err) {
+    console.error('APP: Unhandled rejection - staying alive', err);
+});
+//
 //
 var translator = [
     //switch
@@ -88,69 +101,15 @@ cron.CRON_schedule('0 0 * * *', "Central OFF", action_central_off);
 //
 //
 ws.WS_event.on("message", function(data) {
-    //console.log("DATA MESS", data);
-    let data_;
-    let trs;
-    data_ = ws.WS_asJson(data);
-    if (!data_) {
-        data_ = ws.WS_asString(data);
-        if (!data_) {
-            console.warn("APP: No valid JSON data from WS event. Trying translator ...", data);
-            return;
-        }
-        //
-        //console.warn("DATA", data_);
-        //
-        data_ = data_.trim().split(" ");
-        if (!data_[0] && !data_[1]) {
-            console.log("APP: No correct message from WS");
-            return;
-        }
-        //
-
-        switch (data_[0].trim().toUpperCase()) {
-            case "SCENE":
-                for (var i = 0; i < translator.length; i++) {
-                    trs = translator[i];
-                    //console.log(trs);
-                    if (trs.name.trim().toUpperCase() != data_[1].trim().toUpperCase()) {
-                        //console.log("skip", trs);
-                        continue;
-                    }
-                    if (data_[2] !== undefined && data_[2] !== 'undefined' && data_[2] !== '') {
-                        console.log("DATA VALUE", data_[2]);
-                        trs.value = data_[2];
-                    }
-                    data_ = trs;
-                    break;
-                }
-                break;
-            case "ADDR":
-                trs = {
-                    dst_addr: undefined,
-                    dpt_type: 'DPT1',
-                    value: undefined
-                }
-                if (data_[1] !== undefined && data_[1] !== 'undefined' && data_[1] !== '') {
-                    trs.dst_addr = data_[1];
-                } else {
-                    return;
-                }
-                if (data_[2] !== undefined && data_[2] !== 'undefined' && data_[2] !== '') {
-                    console.log("DATA VALUE", data_[2]);
-                    trs.value = data_[2];
-                } else {
-                    return;
-                }
-                data_ = trs;
-                break;
-        }
-    }
-    if (!data_) {
+    // Parsing lives in services/parser.js so it can be tested without sockets.
+    // Anything it rejects used to reach the bus layer and terminate the process.
+    var result = parser.PARSER_parse(data, translator);
+    if (result.rejected) {
+        console.warn("APP: Rejected frame from WS -", result.rejected, "|", String(data));
         return;
     }
-    console.log("APP: Brdiging to KNX", data_);
-    knx.KNX_send(data_);
+    console.log("APP: Brdiging to KNX", result.message);
+    knx.KNX_send(result.message);
 });
 //
 knx.KNX_event.on("message", function(data) {

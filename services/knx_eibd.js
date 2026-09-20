@@ -12,7 +12,12 @@ var knx_emitter = new EventEmitter();
 var eibd_timeout = null;
 var data_to_resend = null;
 //
+// Two connections on purpose. eibdconn sends; listenerconn only listens.
+// Sharing one meant a send could disturb the bus listener, and - worse - that
+// nothing watched whether the listener was still alive.
 var eibdconn = new eibd.Connection();
+var listenerconn = null;
+var listener_timeout = null;
 
 function humanType(dpt_type) {
   switch (dpt_type) {
@@ -54,16 +59,61 @@ function checkStatus() {
   });
 }
 
+function scheduleListenerRetry() {
+  if (listener_timeout) {
+    return;
+  }
+  listener_timeout = setTimeout(function() {
+    listener_timeout = null;
+    openListener();
+  }, 5000);
+}
+
+//
+// The bus listener used to be opened exactly once, at startup, on the same
+// connection used for sending. Nothing ever checked whether it was still alive.
+//
+// Confirmed live on 2026-09-20: knxd was killed, systemd brought it back in
+// 5.8 s, and the bridge went deaf. It kept accepting commands and forwarding
+// them to the bus, but reported nothing coming back, and stayed that way until
+// the process was restarted by hand. Companion reads that channel, so the crew
+// would see stale button state with no indication anything was wrong.
+//
+// Now the listener owns its connection, and re-attaches itself whenever that
+// connection closes.
+//
 function openListener() {
-  eibdconn.openGroupSocket(0, function(parser) {
-    console.log('EIBD: Prepare listener for KNX events');
-    parser.on('write', function(src_addr, dst_addr, dpt_type, value) {
-      var date = new Date().toJSON();
-      var knx_json_obj = { 'src_addr': src_addr, 'dst_addr': dst_addr, 'dpt_type': dpt_type, 'value': value, 'time': date };
-      //
-      console.log('KNX: Received', knx_json_obj);
-      //
-      knx_emitter.emit('message', knx_json_obj);
+  clearTimeout(listener_timeout);
+  listener_timeout = null;
+
+  if (listenerconn) {
+    listenerconn.removeAllListeners('close');
+    listenerconn.end();
+  }
+
+  listenerconn = new eibd.Connection();
+
+  listenerconn.on('close', function() {
+    console.warn('EIBD: listener connection closed - reattaching in 5s');
+    scheduleListenerRetry();
+  });
+
+  listenerconn.socketRemote({ host: opts.host, port: opts.port }, function(err) {
+    if (err) {
+      console.error('EIBD: listener socket error: %s - retrying in 5s', err.code);
+      scheduleListenerRetry();
+      return;
+    }
+    listenerconn.openGroupSocket(0, function(parser) {
+      console.log('EIBD: Listening for KNX events');
+      parser.on('write', function(src_addr, dst_addr, dpt_type, value) {
+        var date = new Date().toJSON();
+        var knx_json_obj = { 'src_addr': src_addr, 'dst_addr': dst_addr, 'dpt_type': dpt_type, 'value': value, 'time': date };
+        //
+        console.log('KNX: Received', knx_json_obj);
+        //
+        knx_emitter.emit('message', knx_json_obj);
+      });
     });
   });
 }
@@ -86,13 +136,29 @@ function sendToBus(data, callback) {
       checkStatus();
       return;
     }
-    eibdconn.openTGroup(eibd.str2addr(data.dst_addr), 0, function(err) {
-      if (err) {
-        console.error("KNX: sendToBus failed", err);
-      } else {
-        eibdconn.sendAPDU(eibd.createMessage('write', data.dpt_type, parseFloat(data.value)), callback);
+    // Defence in depth. services/parser.js already rejects frames that cannot
+    // survive this, but anything thrown here lands in an async callback with
+    // no caller to catch it, which used to end the process.
+    try {
+      var addr = eibd.str2addr(data.dst_addr);
+      if (addr instanceof Error) {
+        console.error("KNX: unparseable address, not sending", data.dst_addr);
+        return;
       }
-    });
+      eibdconn.openTGroup(addr, 0, function(err) {
+        if (err) {
+          console.error("KNX: sendToBus failed", err);
+          return;
+        }
+        try {
+          eibdconn.sendAPDU(eibd.createMessage('write', data.dpt_type, parseFloat(data.value)), callback);
+        } catch (e) {
+          console.error("KNX: sendAPDU threw, not sending", data, e);
+        }
+      });
+    } catch (e) {
+      console.error("KNX: sendToBus threw, not sending", data, e);
+    }
   });
 }
 //
