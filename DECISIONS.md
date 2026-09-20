@@ -49,3 +49,18 @@ Innovation means proposing better ways — for example questioning whether WebSo
 - **There must be a one-command fresh install.** The SD card can die and the bridge may move to another machine; the operator runs one file and the machine works. This is why the original design used tmux and an installer. `install.sh` at the repository root does this now.
 - **There must be a README that lets a stranger debug it immediately** — how to reach the state, read the logs, and go from symptom to cause.
 - **Frontend work is verified with the dev server**, from a machine on the hall network, with the operator checking from his phone. Publishing to FTP is only the last step and its absence blocks nothing before that.
+
+### Network
+
+**The Pi is reached as `knxrpi.lan` at a static 10.77.8.208.** The operator added the router record and the reservation on 2026-09-20, after it was measured that `knxrpi.local` — served by avahi on the Pi — costs 5.03 s per lookup because `.local` is reserved for mDNS and goes to multicast, which is slow or filtered on this network.
+
+```
+knxrpi.lan     0.04 s resolve · 17 ms connect
+knxrpi.local   5.04 s resolve · 5027 ms connect
+```
+
+Use `knxrpi.lan` everywhere: SSH, the phone app, anything new. `knxrpi.local` still resolves and avahi stays running as a fallback for a network without the DNS record — but nothing should depend on it.
+
+### Recording, after it was broken twice
+
+The rule to write decisions and mistakes down as they happen was written on 2026-09-20 and broken twice within the hour, both times caught by the operator. Intention was therefore replaced by a mechanism: **the two questions are answered before every commit**, and the record ships in the same commit. See `../CLAUDE.md`.

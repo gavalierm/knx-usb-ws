@@ -6,7 +6,7 @@ Lighting control for a conference hall. A Raspberry Pi in the rack bridges a Web
 
 ```
 Streamdeck + Companion ──┐
-                         │  ws://knxrpi.local:9240
+                         │  ws://knxrpi.lan:9240
 Phone PWA ───────────────┤  plain text, both directions
                          ▼
                    knx-usb-ws.service   (node, this repository)
@@ -24,7 +24,7 @@ Phone PWA ───────────────┤  plain text, both dir
 ## Is it working?
 
 ```bash
-ssh pi@knxrpi.local
+ssh pi@knxrpi.lan
 ~/Projects/knx-usb-ws/status.sh
 ```
 
@@ -147,6 +147,7 @@ SCENE KAZEN 2
 | `knxd/` | knxd provisioning: the third-party build script, the udev rule, the operator's original setup notes |
 | `deploy.sh` `status.sh` `install.sh` | the three things you actually run |
 | `PROTOCOL.md` | the client contract |
+| `DECISIONS.md` | what the operator has decided: authority, constraints, the goal |
 | `MAINTENANCE.md` | what was checked and found, per maintenance pass |
 | `CLAUDE.md` | guidance for AI agents working in this repository |
 

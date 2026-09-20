@@ -12,7 +12,7 @@ Read-only inspection of the production Pi during a Sunday programme (09:00–12:
 
 | | |
 |---|---|
-| Host | `knxrpi.local` → 10.77.8.208 (`knxrpi` alone does not resolve; use the `.local` suffix, user `pi`) |
+| Host | `knxrpi.lan` → 10.77.8.208, user `pi`. (At the time of this pass it was only reachable as `knxrpi.local`, which costs 5 s per lookup; the operator added the router record and reservation the same day — see `DECISIONS.md`.) |
 | OS | Raspbian GNU/Linux 11 (bullseye), kernel 5.15.84-v7+, armv7l |
 | Node.js | **v12.22.12** |
 | knxd | 0.14.56, `active` |
@@ -146,7 +146,7 @@ current practice mislead. **Measure before asserting a mechanism.**
 
 Two more worth carrying:
 
-- **`ssh knxrpi` does not resolve.** It is `ssh pi@knxrpi.local` (10.77.8.208). Written down because it cost a round trip.
+- **`ssh knxrpi` does not resolve.** Use `ssh pi@knxrpi.lan` (10.77.8.208). Written down because it cost a round trip. During this pass only `knxrpi.local` worked, and it cost 5 s per lookup; the `.lan` record was added the same day.
 - **`last` is useless on this machine.** No RTC, so boot records are written before NTP syncs and all show `Thu Jan 1 01:00`. Use `journalctl --list-boots`, and remember `journalctl -b` only covers the current boot — which here means since 02:00 this morning.
 
 ### Disproven — do not re-investigate
