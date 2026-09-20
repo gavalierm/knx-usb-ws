@@ -71,7 +71,18 @@ function init() {
         //
         ws.on('message', function message(data) {
             data = data.toString().trim();
-            multicast(ws, data);
+            // Every inbound frame is echoed to the other clients - that is
+            // long-standing behaviour and a client may rely on it.
+            //
+            // Queries are the exception. HEALTH is a private question and the
+            // answer goes only to the asker, so echoing the question to
+            // everyone else is pure noise: with a status panel open it meant
+            // Companion receiving the word HEALTH every five seconds. Safe to
+            // exclude because HEALTH did not exist before 2026-09-20, so no
+            // client can have been written around seeing it.
+            if (!/^health\b/i.test(data)) {
+                multicast(ws, data);
+            }
             // The socket goes with the message so the application can answer
             // the client that asked, rather than telling everyone.
             ws_emitter.emit('message', data, ws);

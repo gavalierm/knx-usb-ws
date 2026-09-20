@@ -155,6 +155,8 @@ A client that connects and receives nothing is therefore not necessarily talking
 
 Every inbound frame is **multicast to all other connected clients verbatim**, before it is parsed, and regardless of whether it was valid. A client that sends `ADDR 0/0/1 1` will not see its own echo; every other client will.
 
+**`HEALTH` is the exception and is never echoed.** It is a private question whose answer goes only to the asker, so repeating it to everyone is noise — with a status panel open it meant every other client receiving the word `HEALTH` every five seconds. Excluded safely because the verb did not exist before 2026-09-20.
+
 So two clients controlling the same light see each other's activity twice, in two different shapes: once as the raw command (echo) and once as `SWITCH CENTRAL 1` (bus event).
 
 ## Address table
