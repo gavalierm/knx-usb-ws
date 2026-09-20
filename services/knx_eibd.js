@@ -86,13 +86,29 @@ function sendToBus(data, callback) {
       checkStatus();
       return;
     }
-    eibdconn.openTGroup(eibd.str2addr(data.dst_addr), 0, function(err) {
-      if (err) {
-        console.error("KNX: sendToBus failed", err);
-      } else {
-        eibdconn.sendAPDU(eibd.createMessage('write', data.dpt_type, parseFloat(data.value)), callback);
+    // Defence in depth. services/parser.js already rejects frames that cannot
+    // survive this, but anything thrown here lands in an async callback with
+    // no caller to catch it, which used to end the process.
+    try {
+      var addr = eibd.str2addr(data.dst_addr);
+      if (addr instanceof Error) {
+        console.error("KNX: unparseable address, not sending", data.dst_addr);
+        return;
       }
-    });
+      eibdconn.openTGroup(addr, 0, function(err) {
+        if (err) {
+          console.error("KNX: sendToBus failed", err);
+          return;
+        }
+        try {
+          eibdconn.sendAPDU(eibd.createMessage('write', data.dpt_type, parseFloat(data.value)), callback);
+        } catch (e) {
+          console.error("KNX: sendAPDU threw, not sending", data, e);
+        }
+      });
+    } catch (e) {
+      console.error("KNX: sendToBus threw, not sending", data, e);
+    }
   });
 }
 //
