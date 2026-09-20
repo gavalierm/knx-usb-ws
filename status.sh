@@ -40,8 +40,8 @@ if ss -tln 2>/dev/null | grep -q ':9240'; then
 else
     warn "nothing listening on 9240 - clients cannot connect"
 fi
-row "clients" "$(ss -tn 2>/dev/null | grep -c ':9240 ')"
-row "knxd socket" "$(ss -tn 2>/dev/null | grep -c ':6720')"
+row "clients" "$(ss -tnH 2>/dev/null | awk '$4 ~ /:9240$/' | wc -l | tr -d ' ')"
+row "knxd socket" "$(ss -tnH 2>/dev/null | awk '$5 ~ /:6720$/' | wc -l | tr -d ' ')"
 
 hd "Bus"
 if lsusb 2>/dev/null | grep -qi '28c2:0013'; then
@@ -49,11 +49,17 @@ if lsusb 2>/dev/null | grep -qi '28c2:0013'; then
 else
     warn "KNX-USB interface not on the USB bus"
 fi
-last=$(journalctl -u knx-usb-ws --no-pager -n 400 --output=short-iso 2>/dev/null | grep 'Brdiging to WS' | tail -1)
+# Read the recent log once. Do not pipe journalctl into `grep -q`: grep exits on
+# the first match, journalctl takes SIGPIPE, and with pipefail the whole
+# pipeline reports failure - which made this script warn that the listener was
+# detached at the very moment it was working.
+recent=$(journalctl -u knx-usb-ws --no-pager -n 400 --output=short-iso 2>/dev/null || true)
+last=$(printf '%s\n' "$recent" | grep 'Brdiging to WS' | tail -1)
 row "last bus event" "${last:-none in the last 400 log lines}"
-if ! journalctl -u knx-usb-ws --no-pager -n 200 2>/dev/null | grep -q 'Listening for KNX events'; then
-    warn "no 'Listening for KNX events' recently - the bus listener may be detached"
-fi
+case "$recent" in
+    *"Listening for KNX events"*) ;;
+    *) warn "no 'Listening for KNX events' recently - the bus listener may be detached" ;;
+esac
 
 hd "Health"
 rej=$(journalctl -u knx-usb-ws --since '24 hours ago' --no-pager 2>/dev/null | grep -c 'Rejected frame')
