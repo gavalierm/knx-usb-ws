@@ -120,11 +120,17 @@ ws.WS_event.on("message", function(data) {
 // app displaying stale buttons with no sign anything was wrong.
 //
 var last_state = {};
+// Counts telegrams that arrived as a reply to a read request, so the bridge can
+// report whether asking the bus achieved anything.
+var responses_seen = 0;
 
 knx.KNX_event.on("message", function(data) {
     if (!data) {
         console.log("APP: No valid JSON data from KNX event", data);
         return;
+    }
+    if (data.kind === 'response') {
+        responses_seen++;
     }
     //translator
     var message = null;
@@ -176,11 +182,30 @@ function refreshBusState() {
         }
     }
     console.log("APP: Asking the bus about " + addresses.length + " addresses");
+    var before = responses_seen;
     addresses.forEach(function(addr, index) {
         setTimeout(function() {
             knx.KNX_read(addr);
         }, index * 400);
     });
+    // Say out loud whether anyone answered. Verified on this installation
+    // 2026-09-20: the read requests reach the bus - a bus monitor shows
+    // "Read from 1.1.130 to 0/0/1" - and nothing replies, because the group
+    // objects do not have the Read flag set in the ETS project. Until that
+    // changes, state can only be learned by watching traffic, and a circuit
+    // nobody has touched since startup is genuinely unknown rather than off.
+    // Without this line the feature looks like it works and quietly does not.
+    setTimeout(function() {
+        var answered = responses_seen - before;
+        if (answered === 0) {
+            console.warn("APP: Asked the bus about " + addresses.length +
+                " addresses, nothing answered. Expected on this installation: " +
+                "the group objects have no Read flag set in ETS. State will be " +
+                "learned from traffic instead.");
+        } else {
+            console.log("APP: " + answered + " of " + addresses.length + " addresses answered");
+        }
+    }, addresses.length * 400 + 3000);
 }
 
 knx.KNX_event.on("listening", refreshBusState);

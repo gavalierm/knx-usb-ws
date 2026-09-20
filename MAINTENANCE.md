@@ -149,6 +149,28 @@ Two more worth carrying:
 - **`ssh knxrpi` does not resolve.** Use `ssh pi@knxrpi.lan` (10.77.8.208). Written down because it cost a round trip. During this pass only `knxrpi.local` worked, and it cost 5 s per lookup; the `.lan` record was added the same day.
 - **`last` is useless on this machine.** No RTC, so boot records are written before NTP syncs and all show `Thu Jan 1 01:00`. Use `journalctl --list-boots`, and remember `journalctl -b` only covers the current boot — which here means since 02:00 this morning.
 
+### The bus does not answer read requests, and that is an ETS setting
+
+Measured 2026-09-20, after adding a startup `GroupValueRead` for every address in the table so a client would see true state instead of waiting for someone to press something.
+
+The requests reach the bus. A bus monitor run from the library's own tools shows them:
+
+```
+Read from 1.1.130 to 0/0/1
+Read from 1.1.131 to 0/3/0
+```
+
+**Nothing replies.** No `response` telegram, for any address. The bridge's own log after a restart: `Asking the bus about 8 addresses`, then zero responses.
+
+The cause is not in this code. A KNX group object only answers a read when the **R (Read) flag** is enabled on it in the ETS project, and on this installation it is not. Enabling it needs ETS — which the operator has said is not readily available.
+
+**What follows:**
+
+- State can be learned only by watching traffic. A circuit nobody has touched since the bridge started is genuinely **unknown**, not off, and any client showing it must say so rather than guess.
+- The startup read stays in the code. It costs eight telegrams, moves nothing (verified: zero writes to the bus during the whole exercise) and starts working by itself the day those flags are set.
+- The bridge now logs whether anyone answered, so this cannot quietly look like a working feature again.
+- If the ETS project is ever opened for anything else, enabling the Read flags on these group objects is a cheap thing to do while in there.
+
 ### Disproven — do not re-investigate
 
 - **knxd instability.** 181 start/stop events across 90 days of journal are the nightly reboot, not failures. One genuine failure in that period (2026-09-16).

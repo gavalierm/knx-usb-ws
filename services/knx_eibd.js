@@ -110,7 +110,7 @@ function openListener() {
       function received(kind) {
         return function(src_addr, dst_addr, dpt_type, value) {
           var date = new Date().toJSON();
-          var knx_json_obj = { 'src_addr': src_addr, 'dst_addr': dst_addr, 'dpt_type': dpt_type, 'value': value, 'time': date };
+          var knx_json_obj = { 'src_addr': src_addr, 'dst_addr': dst_addr, 'dpt_type': dpt_type, 'value': value, 'time': date, 'kind': kind };
           //
           console.log('KNX: Received (' + kind + ')', knx_json_obj);
           //
