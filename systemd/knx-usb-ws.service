@@ -1,0 +1,41 @@
+# KNX USB WS bridge
+#
+# Replaces the tmux session that cron started from auto_tmuxer.sh.
+#
+# Two problems this solves:
+#   1. Nothing supervised the bridge. An uncaught exception ended it and the
+#      hall had no lighting control until the nightly reboot.
+#   2. Nothing kept its output. The tmux scrollback died with the session at
+#      every reboot, so no crash was ever recorded. journald is persistent
+#      here, so running under systemd gives history for free.
+#
+# Deliberately has NO network dependency and does NOT deploy anything. Coming
+# back after a power cut must be fast and must not pull unverified code - see
+# deploy.sh and CLAUDE.md.
+#
+# Install: see MAINTENANCE.md. Only one instance may run; port 9240 is bound
+# exclusively, so the cron/tmux path must be removed at the same time.
+
+[Unit]
+Description=KNX USB WS bridge (WebSocket to KNX)
+Documentation=file:/home/pi/Projects/knx-usb-ws/PROTOCOL.md
+After=network.target knxd.service
+Wants=knxd.service
+# Never stop restarting. The default burst limit would leave the bridge dead
+# after five quick failures, which is the outcome this unit exists to prevent.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/Projects/knx-usb-ws
+ExecStart=/usr/bin/node /home/pi/Projects/knx-usb-ws/app.js
+Restart=always
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=knx-usb-ws
+
+[Install]
+WantedBy=multi-user.target
