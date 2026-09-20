@@ -32,6 +32,11 @@ process.on('unhandledRejection', function(err) {
 var translator = [
     //switch
     {
+        // Central has no status address, and that is not an omission. It is not
+        // a circuit but a group command: pressing it makes every channel below
+        // report its own status, which is what was observed on 2026-09-20.
+        // Nothing reports for central itself, so its cached value is the last
+        // command sent rather than a confirmed state.
         name: "central",
         dst_addr: '0/0/1',
         dpt_type: 'DPT1'
@@ -39,28 +44,30 @@ var translator = [
     {
         name: "schody",
         dst_addr: '0/1/0',
+        status_addr: '0/1/1',
         dpt_type: 'DPT1'
     },
     {
         name: "zvukari",
         dst_addr: '0/2/0',
-        // The actuator writes this address by itself about 100 ms after every
-        // change - its own confirmation of what it actually did, as opposed to
-        // what somebody asked for on dst_addr. Confirmed on the bus
-        // 2026-09-20; see MAINTENANCE.md. The others almost certainly have one
-        // too, but they have not been observed, and the convention is not a
-        // fact: switch a circuit and watch which address answers.
+        // Actuator 1.1.1 writes the status address by itself about 100 ms
+        // after every change - its own confirmation of what it did, as opposed
+        // to what somebody asked for on dst_addr. All four were confirmed on
+        // the bus on 2026-09-20 by switching each circuit and watching which
+        // address answered; none of them is assumed from the convention.
         status_addr: '0/2/1',
         dpt_type: 'DPT1'
     },
     {
         name: "sala",
         dst_addr: '0/3/0',
+        status_addr: '0/3/1',
         dpt_type: 'DPT1'
     },
     {
         name: "podium",
         dst_addr: '0/4/0',
+        status_addr: '0/4/1',
         dpt_type: 'DPT1'
     },
     //scene    
