@@ -201,7 +201,31 @@ Two consequences, and the second matters more:
 - **It does not solve state at startup.** The sending is on change, not cyclic, so after a restart there is still nothing until something moves. Reads do not help either: probes to `0/0/2`, `0/1/1`, `0/2/1`, `0/3/1`, `0/4/1` and `0/0/1` all reached the bus and **none was answered**, so the Read flag is off on the status objects too.
 - **It is a better source of truth than what is cached today.** The bridge currently remembers the *command* — what somebody asked for. The status address is what the actuator actually did. If a breaker is out or a relay does not pull in, the command says on and the status tells the truth.
 
-Only `0/2/1` is confirmed, because no other circuit was switched while anyone was watching. The convention suggests `0/1/1`, `0/3/1`, `0/4/1` and something for central, but **do not assume** — switch each circuit once and read which address answers about 100 ms later. That also seeds the persistent cache.
+**Completed the same day.** The operator switched every scene and every circuit on and off in a controlled pass, with central deliberately last so its effects would not be mixed into the rest. The whole map came out, and no address in that pass went unrecognised:
+
+| Circuit | Command | Status |
+|---|---|---|
+| schody | 0/1/0 | 0/1/1 |
+| zvukari | 0/2/0 | 0/2/1 |
+| sala | 0/3/0 | 0/3/1 |
+| podium | 0/4/0 | 0/4/1 |
+
+All four statuses are written by device `1.1.1`, so one multi-channel actuator drives the lot, and each reports **both** directions — a confirmation follows every command whether it switched on or off.
+
+**Central has no status address.** It is a group command, not a circuit:
+
+```
+SWITCH CENTRAL 1  ->  SCHODY 1, ZVUKARI 1, SALA 1, PODIUM 1
+SWITCH CENTRAL 0  ->  SCHODY 0, ZVUKARI 0, SALA 0, PODIUM 0
+```
+
+Its cached value is therefore the last command sent, not a confirmed state.
+
+**Scenes are fire-and-forget, confirmed.** Each of `1/0/0`, `1/1/0` and `1/2/0` produced exactly one telegram and nothing answered.
+
+**Open question.** Recalling a scene produced no circuit status telegrams at all. Either the lights were already in that state, or scene execution does not drive the objects that report. This pass cannot tell the two apart, and it matters: if a scene does move lights silently, the bridge's picture of the circuits goes stale without any sign. Worth a deliberate test — set the circuits to a known state, then recall a scene that differs from it, and watch.
+
+**A scene is an event, not a state.** After `CENTRAL OFF` no scene is in effect, but the cache still holds the last one recalled, so a client highlighting it is saying "last recalled" rather than "currently in effect". That is the honest reading of what is stored.
 
 ### Disproven — do not re-investigate
 
