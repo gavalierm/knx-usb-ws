@@ -89,23 +89,56 @@ Presumably a workaround for a startup ordering problem. The correct mechanism is
 - The `@reboot` cron starts `app.js` at 02:00:11; NTP synchronizes at 02:00:58. The bridge therefore runs for ~47 s on an unsynchronized clock. **Unverified risk:** `node-schedule` holds the `0 0 * * *` "Central OFF" job, and its behaviour across a large forward clock jump has not been checked. If it can misfire, it would turn the hall's lights off at an arbitrary moment — the one outcome that is absolutely forbidden. Verify before trusting it.
 - `daily knxd libusb do_close` errors at 02:00:0x are knxd being stopped by the nightly reboot. Benign. knxd is otherwise stable: 181 start/stop events across ~90 days of journal is the daily cycle, not instability. Only one genuine failure in that period (2026-09-16).
 
+### A second fault, found by experiment
+
+With the operator supervising and a physical wall panel as fallback, knxd was killed deliberately to test the new restart policy. It recovered — and the test exposed a fault nobody knew about.
+
+```
+11:17:20  SIGKILL to knxd (PID 759)
+11:17:25  systemd: Scheduled restart job, restart counter is at 1
+11:17:26  knxd active again as PID 2651   -> 5.83 s
+```
+
+The bridge logged **nothing at all**. The operator then pressed the wall panel: the telegram reached the bus, but never reached the bridge or any WebSocket client. **The bridge had gone deaf and did not know it.** It still accepted commands and forwarded them to the bus, so from the outside it looked healthy. Only a manual restart of the process brought the listener back.
+
+Cause: `openListener()` ran once at startup, on the connection also used for sending, and nothing ever checked it was alive. Every knxd restart — including the one at every nightly reboot — silently cost the feedback channel until something restarted the bridge.
+
+This is the second cause behind "it stops responding", and it explains the half of the symptom the parser crash does not: commands keep working while Companion shows stale state.
+
 ### Done in this pass
 
-- Extracted WebSocket parsing into `services/parser.js`; every malformed frame is now rejected instead of terminating the process.
-- Added `process.on('uncaughtException')` / `('unhandledRejection')` handlers to `app.js`.
-- Wrapped the eibd send path in `services/knx_eibd.js` in `try/catch`, including the `str2addr` Error return value.
-- Added `test/parser.test.js` — 16 contract tests, no dependencies, `npm test`.
-- Added `scripts.start` and `scripts.test` to `package.json`.
-- Verified locally: 8 previously fatal frames are now rejected, the process survives, and a valid frame afterwards is still handled.
+Local, then deployed:
 
-**Not deployed.** Nothing was written to the Pi in this pass.
+- Extracted WebSocket parsing into `services/parser.js`; every malformed frame is rejected instead of terminating the process. Verified locally: 8 previously fatal frames rejected, process survives, a valid frame afterwards still handled.
+- Added `process.on('uncaughtException')` / `('unhandledRejection')` handlers to `app.js`.
+- Wrapped the eibd send path in `try/catch`, including the `str2addr` Error return value.
+- **Gave the bus listener its own connection and made it re-attach on close**, retrying every 5 s.
+- Added `test/parser.test.js` — 16 contract tests, no dependencies, `npm test`.
+- Added `scripts.start` / `scripts.test`; added `systemd/` units and `deploy.sh` (written, **not yet installed**).
+
+Applied to the production machine:
+
+| Change | Verification |
+|---|---|
+| `knxd.service.d/10-restart.conf` — `Restart=always`, `RestartSec=5s`, `StartLimitIntervalSec=0` | killed knxd twice; recovered in 5.83 s both times |
+| `knxd.service.d/20-no-internet-gate.conf` — cleared the `ping google.com` `ExecStartPre` | knxd restarts cleanly without it |
+| Code deployed to `52f3ce0`, bridge restarted | `EIBD: Listening for KNX events` in the log |
+| Listener recovery | killed knxd again: `listener connection closed → reattaching → Listening for KNX events`, same bridge PID throughout |
+| Full round trip after recovery | `SCENE kazen` out, `SCENE KAZEN 2` back, under a second |
+
+No lights changed at any point. Every telegram sent was a recall of the scene that was already active.
+
+### Disproven — do not re-investigate
+
+- **knxd instability.** 181 start/stop events across 90 days of journal are the nightly reboot, not failures. One genuine failure in that period (2026-09-16).
+- **Connection leak to knxd.** `sendToBus()` does reconnect on every send, and each connection takes a fresh address from the `--client-addrs=1.1.129:8` pool, but addresses are recycled: two entries on port 6720 and four socket FDs on the bridge. The pool does not exhaust. Wasteful, not harmful.
 
 ### Recommended next, in order
 
-1. **`Restart=always` on `knxd.service`** with a sensible `RestartSec`. Removes the confirmed cause of the outage class.
-2. **Run `app.js` as a systemd unit** instead of a tmux session started from cron. Gives it the same restart policy and puts its output in journald — which solves the missing log history in the same move. `auto_tmuxer.sh` keeps the `git stash && git pull` deploy step, or that moves too.
-3. **Replace the `ping google.com` gate** with `After=/Wants=network-online.target`.
-4. **Deploy the parser hardening** (already built and tested, waiting for a window).
-5. **Node.js** off v12. Check what the Pi's repositories offer before committing to a version; nothing in this project compiles, so the upgrade is cheaper than it looks.
-6. **Decide the OS path** — bullseye is out of support. Either upgrade the distro or rebuild the machine, which is also the moment to put all of the above into configuration management rather than hand-edited files.
-7. Once 1 and 2 hold, **remove `0 2 * * * root reboot`** and confirm the machine stays healthy without it.
+1. **Run `app.js` as a systemd unit** instead of a tmux session from cron — `systemd/knx-usb-ws.service` is written and waiting. It is the last piece with no supervisor: if the node process dies now, nothing restarts it until 01:00. It also gives the project its first persistent log. Needs the cron entries changed in the same step, and an empty hall.
+2. **Install `deploy.sh`** on the 01:00 cron in place of `auto_tmuxer.sh`, and drop the `@reboot` pull.
+3. **Dependency vulnerabilities** — GitHub reports 3 on the default branch (2 high, 1 moderate). Check what they are; every dependency here is pure JavaScript, so updating is cheap.
+4. **Node.js** off v12 (EOL April 2022).
+5. **Decide the OS path** — bullseye is out of support. Upgrade or rebuild; a rebuild is the moment to put all of this in configuration management instead of hand-edited files.
+6. Once 1 and 2 hold, **remove `0 2 * * * root reboot`** and confirm the machine stays healthy without it.
+7. **Protocol UX** — additive only, see the note in `PROTOCOL.md`. The gap worth closing first: a client that connects has no way to learn current state and shows stale buttons until the next bus event.
