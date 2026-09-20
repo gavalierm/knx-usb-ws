@@ -282,6 +282,14 @@ ws.WS_event.on("connection", function(client) {
         console.log("APP: New client, no cached bus state to send yet");
         return;
     }
+    // Oldest first, so the newest thing that happened is the last thing the
+    // client hears. It matters for scenes: only one can be in effect, and a
+    // client that takes the last SCENE line it receives was otherwise being
+    // handed whichever key the object happened to iterate last - which is not
+    // the same as the most recent, and is not even stable.
+    addresses.sort(function(a, b) {
+        return last_state[a].at - last_state[b].at;
+    });
     console.log("APP: Replaying " + addresses.length + " cached states to new client");
     for (var i = 0; i < addresses.length; i++) {
         ws.WS_sendTo(client, last_state[addresses[i]].message);
