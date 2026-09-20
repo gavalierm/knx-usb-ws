@@ -68,6 +68,12 @@ function report(facts) {
         // Seconds since the last telegram the bridge saw. -1 means it has not
         // seen one yet, which after a restart is normal rather than alarming.
         ['LASTBUS', facts.last_bus_at ? Math.round((Date.now() - facts.last_bus_at) / 1000) : -1],
+        // How long ago the freshest thing the bridge reports was last
+        // confirmed on the bus. With LASTBUS at -1 this says the picture was
+        // restored from disk rather than seen this session - which is the
+        // difference between "the lights are like this" and "the lights were
+        // like this when anyone last looked".
+        ['STATEAGE', facts.state_newest_at ? Math.round((Date.now() - facts.state_newest_at) / 1000) : -1],
     ];
     return lines.map(([name, value]) => 'HEALTH ' + name + ' ' + value);
 }

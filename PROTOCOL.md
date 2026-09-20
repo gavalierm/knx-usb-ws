@@ -71,7 +71,10 @@ HEALTH UPTIME 3600     seconds since the bridge started
 HEALTH ADDRESSES 8     distinct group addresses the bridge knows of
 HEALTH KNOWN 3         of those, how many it has current state for
 HEALTH LASTBUS 42      seconds since the last telegram it saw
+HEALTH STATEAGE 900    how long ago the freshest state it reports was confirmed
 ```
+
+`LASTBUS` and `STATEAGE` together tell a client whether it is looking at a live picture or a remembered one. `LASTBUS -1` with `KNOWN` above zero means the bridge has seen nothing since it started and is reporting state **restored from disk**, and `STATEAGE` says how old that is. A client should say so rather than present it as current.
 
 `KNXD` reflects the listener's persistent connection. The sending side opens a socket per telegram and closes it in between, so its state says nothing about health — reporting that instead produced a self-contradictory `KNXD 0` next to `LISTENER 1`.
 
@@ -144,7 +147,7 @@ Why it exists: until then, a client that connected knew nothing until someone pr
 
 Two limits worth knowing:
 
-- **The bridge only knows what it has seen.** Its cache starts empty at startup, so an address that has not carried a telegram since the bridge started is not replayed.
+- **The bridge only knows what it has seen** — but it no longer forgets it. Since 2026-09-20 the cache is written to disk and restored at startup, so a client that connects after a deploy or the nightly reboot still gets a picture instead of nothing. Entries older than a week are dropped rather than restored: a week-old picture of the lights is not information, it is a guess wearing a timestamp. Ask `HEALTH` for `STATEAGE` to find out how current it is.
 
   Since 2026-09-20 the bridge sends a `GroupValueRead` for every address in the table once its listener attaches, to close that gap. **On this installation nothing answers** — the group objects have no Read flag set in the ETS project — so in practice state is still learned only from traffic, and a circuit nobody has touched since startup is genuinely *unknown* rather than off. Clients must show that as unknown, not as zero. The reads cost nothing and will start working by themselves the day those flags are set.
 - **An address that is not in the table is never cached**, because the line carries no usable state — see the hazard below.

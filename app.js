@@ -15,6 +15,7 @@ ws.WS_init();
 //
 var parser = require('./services/parser');
 var health = require('./services/health');
+var store = require('./services/store');
 //
 // Last line of defence. Nothing supervises this process: tmux does not restart
 // it and cron only runs at 01:00, so an uncaught exception means the hall loses
@@ -117,6 +118,7 @@ ws.WS_event.on("message", function(data, client) {
             clients: ws.WS_clients(),
             addresses: Object.keys(distinctAddresses()).length,
             known: Object.keys(last_state).length,
+            state_newest_at: store.STORE_newest(last_state),
             last_bus_at: last_bus_at
         });
         console.log("APP: HEALTH asked by a client");
@@ -136,7 +138,15 @@ ws.WS_event.on("message", function(data, client) {
 // something. Before this, every bridge restart left Companion and the phone
 // app displaying stale buttons with no sign anything was wrong.
 //
-var last_state = {};
+// Loaded from disk at startup. Without this the bridge forgets everything it
+// knew on every restart - a deploy, the nightly reboot - and stays blind until
+// somebody happens to change a light, which on a quiet day is hours. The bus
+// cannot be asked (no Read flag in ETS), so remembering is the only way a
+// client sees anything when it opens.
+//
+// Each entry keeps when it was last confirmed, so nothing has to pretend that
+// a value from last night is current. See HEALTH STATEAGE.
+var last_state = store.STORE_load();
 // Counts telegrams that arrived as a reply to a read request, so the bridge can
 // report whether asking the bus achieved anything.
 var responses_seen = 0;
@@ -186,7 +196,8 @@ knx.KNX_event.on("message", function(data) {
         ws.WS_send(data);
         return;
     }
-    last_state[data.dst_addr] = message;
+    last_state[data.dst_addr] = { message: message, at: Date.now() };
+    store.STORE_save(last_state);
     console.log("APP: Brdiging to WS", message);
     ws.WS_send(message);
 });
@@ -245,7 +256,7 @@ ws.WS_event.on("connection", function(client) {
     }
     console.log("APP: Replaying " + addresses.length + " cached states to new client");
     for (var i = 0; i < addresses.length; i++) {
-        ws.WS_sendTo(client, last_state[addresses[i]]);
+        ws.WS_sendTo(client, last_state[addresses[i]].message);
     }
 });
 //

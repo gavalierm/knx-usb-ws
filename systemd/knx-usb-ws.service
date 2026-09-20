@@ -30,6 +30,10 @@ Type=simple
 User=pi
 Group=pi
 WorkingDirectory=/home/pi/Projects/knx-usb-ws
+# Gives the service /var/lib/knx-usb-ws, created and owned for it. The bus
+# state is kept there so it survives restarts - not in the repository, which
+# deploy.sh stashes, and not /tmp, which is cleared at boot.
+StateDirectory=knx-usb-ws
 ExecStart=/usr/bin/node /home/pi/Projects/knx-usb-ws/app.js
 Restart=always
 RestartSec=5s
