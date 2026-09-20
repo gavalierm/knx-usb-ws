@@ -50,7 +50,7 @@ SCENE chvaly 1
 
 - Without `value`, the entry's stored value is used. The entry `scene` has no stored value, so `SCENE scene` sends `undefined`.
 - **With `value`, the stored value of that entry is overwritten permanently** — as a string — for the rest of the process lifetime. `SCENE chvaly 5` makes every later bare `SCENE chvaly` send `5`, until the nightly restart. This is a defect, kept here because a client may depend on it.
-- An unknown name matches nothing and **crashes the server** — see the hazard below. It is not dropped.
+- An unknown name is rejected: the bridge logs the reason and sends nothing. Until 2026-09-20 it terminated the process instead — see the hazard note below.
 
 ### Verbs are matched case-insensitively
 
@@ -81,21 +81,19 @@ Why it matters: a client can otherwise only tell whether *its own socket* is ope
 
 Added 2026-09-20. Purely additive — a client that never sends `HEALTH` sees nothing new.
 
-### Hazard: malformed frames terminate the server
+### Malformed frames are rejected
 
-Invalid input is not rejected — it kills the process. There is no `try/catch` in the bridge and no `process.on('uncaughtException')`, so the exception ends it. Nothing restarts it until the `01:00` cron or a reboot, which means the hall loses lighting control for the rest of the event.
+Anything that does not match the forms above is logged with a reason and dropped. The bridge stays up, and a valid frame sent afterwards still works.
 
-Three known ways in:
+**This was not true until 2026-09-20.** Invalid input reached the bus layer and ended the process, with nothing to restart it until the next reboot — so the hall lost lighting control for the rest of the event. Three frames did it, and the first was reproduced deliberately:
 
-| Frame | Mechanism | Status |
-|---|---|---|
-| `SCENE` (no second token) | `data_[1].trim()` on `undefined` | **reproduced** |
-| `SCENE <unknown name>` | falls through as a raw array → `str2addr(undefined)` throws | verified by reading; needs knxd connected |
-| any unrecognised verb | same path | verified by reading; needs knxd connected |
+| Frame | Mechanism |
+|---|---|
+| `SCENE` (no second token) | `data_[1].trim()` on `undefined` |
+| `SCENE <unknown name>` | fell through as a raw array → `str2addr(undefined)` threw |
+| any unrecognised verb | same path |
 
-**Clients must send only the exact forms documented above.** A mistyped or half-filled button in a control surface is enough to take the system down, and the person configuring that button has no way to know.
-
-Until the bridge is hardened, this is also a denial-of-service reachable by anything on the VLAN. Hardening it is the top-priority fix and does not change any message format.
+A mistyped or half-filled button in a control surface was enough to take the system down, and the person configuring that button had no way to know. Sending only the documented forms is still the right thing to do — but it is no longer load-bearing.
 
 ## Server → client
 
@@ -118,7 +116,7 @@ SCENE SCENE 2
 - `<TYPE>` is derived from the DPT: `DPT1` → `SWITCH`, `DPT5` → `SCENE`. **Any other DPT is dropped silently.**
 - `<NAME>` is the address table entry. `1/0/0` is listed twice (`scene` and `uvod`) and the first match wins, so that address always reports as `SCENE SCENE <value>` — never `UVOD`.
 - Sent to **all** connected clients, including the one whose command caused the event.
-- Only `write` telegrams. Reads and responses never appear.
+- Both `write` telegrams and `response` telegrams (a device answering a read request) are forwarded; they are indistinguishable to a client, because both carry current state. Before 2026-09-20 only `write` was handled.
 
 ### Hazard: unknown addresses
 
@@ -146,7 +144,9 @@ Why it exists: until then, a client that connected knew nothing until someone pr
 
 Two limits worth knowing:
 
-- **The bridge only knows what it has seen.** Its cache starts empty at startup, so an address that has not carried a telegram since the bridge started is not replayed. Reading the addresses from the bus at startup would close this and is planned separately.
+- **The bridge only knows what it has seen.** Its cache starts empty at startup, so an address that has not carried a telegram since the bridge started is not replayed.
+
+  Since 2026-09-20 the bridge sends a `GroupValueRead` for every address in the table once its listener attaches, to close that gap. **On this installation nothing answers** — the group objects have no Read flag set in the ETS project — so in practice state is still learned only from traffic, and a circuit nobody has touched since startup is genuinely *unknown* rather than off. Clients must show that as unknown, not as zero. The reads cost nothing and will start working by themselves the day those flags are set.
 - **An address that is not in the table is never cached**, because the line carries no usable state — see the hazard below.
 
 A client that connects and receives nothing is therefore not necessarily talking to a broken bridge; it may be talking to one that has just started.
