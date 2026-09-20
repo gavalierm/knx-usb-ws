@@ -49,6 +49,7 @@ Innovation means proposing better ways — for example questioning whether WebSo
 - **There must be a one-command fresh install.** The SD card can die and the bridge may move to another machine; the operator runs one file and the machine works. This is why the original design used tmux and an installer. `install.sh` at the repository root does this now.
 - **There must be a README that lets a stranger debug it immediately** — how to reach the state, read the logs, and go from symptom to cause.
 - **Frontend work is verified with the dev server**, from a machine on the hall network, with the operator checking from his phone. Publishing to FTP is only the last step and its absence blocks nothing before that.
+- **The phone app is published at `http://knx.tymy.sk`.** Given by the operator 2026-09-20, closing a gap recorded earlier the same day. The host already redirects `https://` **down** to `http://` (302, openresty), which is what keeps `ws://` working — that redirect must be protected, not corrected. FTP credentials are still unknown.
 
 ### Network
 
@@ -60,6 +61,8 @@ knxrpi.local   5.04 s resolve · 5027 ms connect
 ```
 
 Use `knxrpi.lan` everywhere: SSH, the phone app, anything new. `knxrpi.local` still resolves and avahi stays running as a fallback for a network without the DNS record — but nothing should depend on it.
+
+The first SSH under the new name fails with `Host key verification failed`, because `known_hosts` is keyed by hostname. Do not wave it through. The host keys were confirmed identical three ways before the new entry was added — `ssh-keyscan` against `knxrpi.lan`, the existing trusted entry for `knxrpi.local`, and `/etc/ssh/ssh_host_ecdsa_key.pub` read from the machine itself over the already-trusted connection. Compare **the same key type**: the trusted entry was ECDSA and the new name offers ED25519 first, and two algorithms naturally give different fingerprints for one machine.
 
 ### Recording, after it was broken twice
 
